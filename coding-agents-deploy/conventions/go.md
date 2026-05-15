@@ -1,0 +1,10 @@
+- **Language**: Go (latest stable per `go.mod`). `gofmt` clean — no manual formatting.
+- **Package layout**: one purpose per package. Avoid catch-all `util`/`common` packages.
+- **Imports**: grouped (std, third-party, internal) with blank-line separation. `goimports` handles this.
+- **Error handling**: errors are values. Wrap with `fmt.Errorf("context: %w", err)` when adding context. No silent error swallowing. Sentinel errors are exported.
+- **Concurrency**: prefer channels for ownership transfer, mutexes for shared state with no obvious owner. Always pair `go func()` with a way to know when it's done (sync.WaitGroup, context cancellation, channel close).
+- **Interfaces**: defined at the consumer, not the producer. Small interfaces (1-3 methods) where possible.
+- **Tests**: standard `testing` package; table-driven tests for combinatorial cases. `t.Parallel()` where safe. Use `t.TempDir()` over manual temp directories.
+- **Comment density**: doc comments on every exported identifier (per Go convention). No narration on internals.
+- **Dead code**: `go vet` / `staticcheck` clean.
+- **Build**: zero new vet warnings introduced by the diff. `{{build_cmd}}` clean.

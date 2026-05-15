@@ -1,0 +1,7 @@
+- **Indentation**: per the repo's `.editorconfig` if present, otherwise match the surrounding file.
+- **Comment density**: default is no comments. Allowed: comments explaining non-obvious *why*. Not allowed: narration of what the code already says.
+- **Dead code**: every new import has a usage; every new public symbol has a consumer; every new private symbol is referenced.
+- **Test discipline**: new behaviour has a test. Test names match what the body actually verifies.
+- **No production-safety dance**: no feature flags, no `// TODO: drop after vN` markers, no deprecation paths unless the plan explicitly scopes one. Rename → rename everywhere; remove → remove.
+- **Build cleanliness**: zero new errors / warnings introduced by the diff.
+- **Note**: this is a generic fallback. Edit `AGENTS.md` to add stack-specific rules once the project conventions are nailed down.

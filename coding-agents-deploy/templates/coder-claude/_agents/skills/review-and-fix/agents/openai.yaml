@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review and Fix Plan"
+  short_description: "Create or auto-fix the structure of {{project_name}}'s implementation plan."
+  default_prompt: "/review-and-fix"

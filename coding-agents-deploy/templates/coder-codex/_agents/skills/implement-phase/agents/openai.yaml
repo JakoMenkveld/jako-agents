@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement Phase"
+  short_description: "Implement one {{project_name}} phase end-to-end with internal review."
+  default_prompt: "/implement-phase"

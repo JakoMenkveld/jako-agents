@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Implementation"
+  short_description: "Review implemented {{project_name}} phases and update the plan's status markers."
+  default_prompt: "/review-implementation"

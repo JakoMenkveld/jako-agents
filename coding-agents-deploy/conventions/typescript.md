@@ -1,0 +1,9 @@
+- **Language**: TypeScript with `strict: true`. No `any` for new code; never `as any`. Prefer narrow, explicit types and Zod validation at runtime boundaries.
+- **Identifier naming**: spell words out. Acceptable abbreviations: `llm`, `ai`, `api`, `id`, `url`, `uri`, `http`, `https`, `json`, `xml`, `html`, `css`, `db`, `sql`, `ui`, `cli`, `sdk`, `gui`, `cpu`, `gpu`, `os`, `io`, `fs`, `env`.
+- **Indentation**: per the repo's `.editorconfig` / `.prettierrc`. Don't introduce an alternative style.
+- **Imports**: static `import` statements at the top of files. No dynamic `require()`. No lazy module loading. Use npm-installed packages for external dependencies.
+- **Integration shims (`.d.ts`)**: alongside their integration code (e.g., `src/external/opensearch/`), not in a generic `types/` folder.
+- **Tests**: per the project's framework (Jest, Vitest, Playwright, etc.). New behaviour gets a test that exercises it. Test names match what the body asserts.
+- **Comment density**: default is no comments. Allowed: comments explaining non-obvious *why*. Not allowed: narration of what the code already says.
+- **No production-safety dance**: no feature flags, no `// TODO: drop after v2`, no deprecation paths unless the plan calls for one. Rename → rename everywhere; remove → remove.
+- **Build**: zero new errors and zero new warnings introduced by the diff. Lint clean (if `{{lint_cmd}}` is wired).

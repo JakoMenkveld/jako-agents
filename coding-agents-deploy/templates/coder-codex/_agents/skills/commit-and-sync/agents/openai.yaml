@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commit and Sync"
+  short_description: "Stage, commit, push, optionally release-tag with semver bump."
+  default_prompt: "/commit-and-sync"

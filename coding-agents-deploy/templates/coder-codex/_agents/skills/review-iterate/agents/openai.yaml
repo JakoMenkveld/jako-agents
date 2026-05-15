@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Iterate"
+  short_description: "Read-only review of {{project_name}} phases against the plan."
+  default_prompt: "/review-iterate"

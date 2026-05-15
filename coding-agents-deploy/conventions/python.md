@@ -1,0 +1,10 @@
+- **Language**: Python 3.x. Type hints on every new public function and method (`from __future__ import annotations` at the top of new modules).
+- **Style**: PEP 8 with project-specific overrides (see `pyproject.toml` / `setup.cfg`). Black-compatible formatting; line length per the project config.
+- **Imports**: standard library, third-party, local — three groups separated by a blank line. Absolute imports preferred over relative.
+- **Dataclasses & typing**: `@dataclass` for record-like types; `TypedDict` / `Protocol` / `Literal` where they fit. Prefer immutability (`frozen=True`).
+- **Async**: `asyncio` if the project uses it. Never mix sync and async in the same call chain unless via `asyncio.to_thread`.
+- **Error handling**: raise specific exception types. Catch narrowly (no bare `except:`). Re-raise with `raise ... from e` when wrapping.
+- **Tests**: pytest. Fresh fixtures per test where state is involved. Use `tmp_path` / `monkeypatch` over module-level state.
+- **Comment density**: default is no comments. Docstrings on public functions/classes (one-line summary + optional details). No narration of what code already says.
+- **Dead code**: new imports have a usage; new public functions/classes have a caller; new private helpers are referenced.
+- **Build / lint**: `{{lint_cmd}}` clean. Type-check clean if mypy/pyright is configured.

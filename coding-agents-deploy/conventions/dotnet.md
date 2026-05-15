@@ -1,0 +1,12 @@
+- **Language**: C# (latest stable). File-scoped namespaces. Namespaces mirror folder paths.
+- **Indentation**: 4 spaces per `.editorconfig`. No tabs. LF line endings. UTF-8. Final newline.
+- **Nullable reference types**: enabled. Do not suppress with `!` unless the suppression is documented or just-checked.
+- **Records and primary constructors**: prefer `sealed record` for DTOs/entities and primary constructors (`class Foo(IBar bar)`) where they fit.
+- **Async/await discipline**: `async` methods must `await` something or drop the `async` modifier. `Task`-returning methods with no async work return `Task.CompletedTask` / `Task.FromResult(...)`. No `.Result` / `.Wait()` in library or UI code — deadlock and render-loop risk.
+- **DI registration**: scoped service registrations live in `ServiceCollectionExtensions.cs` (or the project's equivalent). Every service interface is registered as scoped unless the plan says otherwise.
+- **Tests**: xUnit unless the project says otherwise. Fresh fixtures per test — don't rely on test execution order.
+- **EF Core (if used)**: entity configurations are `sealed class XxxConfiguration : IEntityTypeConfiguration<Xxx>` and registered in the DbContext's `OnModelCreating`. Migrations are explicit; do not rely on auto-migration in production.
+- **Exception type discipline**: `KeyNotFoundException` for entity-not-found, `ArgumentException` for business-rule violations. Controllers map them to 404 vs 409 respectively.
+- **Comment density**: default is no comments. Allowed: comments explaining a non-obvious *why* (workaround, constraint, subtle invariant). Not allowed: narration of what identifiers already say.
+- **Dead code**: every new `using` has at least one usage in the same file; every new `public` member has at least one consumer; every new private field is read.
+- **Build**: zero new errors and zero new warnings introduced by the diff. Pre-existing baseline warnings are not chased here.

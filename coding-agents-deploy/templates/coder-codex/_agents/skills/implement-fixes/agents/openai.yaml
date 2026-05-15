@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement Fixes"
+  short_description: "Apply a list of findings with internal review."
+  default_prompt: "/implement-fixes"
