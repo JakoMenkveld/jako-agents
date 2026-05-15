@@ -6,8 +6,6 @@ Persistent instructions for coding agents (Claude, Codex, Copilot, etc.) working
 
 {{stack_summary}}
 
-Key locations: {{key_paths}}
-
 ## Plan-driven delivery
 
 The authoritative plan is **[{{plan_path}}]({{plan_path}})**. Phases are headed `## Phase N — <Title>`. A phase is complete when its heading carries a trailing `✅` marker. Work the lowest-numbered open phase unless the user names a specific one.

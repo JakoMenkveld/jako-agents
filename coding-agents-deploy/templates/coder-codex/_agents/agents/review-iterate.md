@@ -18,7 +18,6 @@ Always run this agent with GPT-5.5 (`gpt-5.5`) using Medium reasoning effort (`m
 Build command: `{{build_cmd}}`
 Test command: `{{test_cmd}}`
 Plan: `{{plan_path}}`
-Key paths: {{key_paths}}
 
 ## Severity levels
 

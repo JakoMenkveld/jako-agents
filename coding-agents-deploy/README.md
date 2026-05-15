@@ -53,7 +53,6 @@ Filled by the detector before templates are rendered:
 | `{{lint_cmd}}` | `npm run lint` (or empty) |
 | `{{plan_path}}` | `docs/implementation-plan.md` |
 | `{{conventions_block}}` | injected from `conventions/<stack>.md` |
-| `{{key_paths}}` | top-level src/test directories |
 
 ## Conventions captured from existing implementations
 

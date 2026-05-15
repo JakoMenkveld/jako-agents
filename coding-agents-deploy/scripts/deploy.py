@@ -60,7 +60,6 @@ def build_substitutions(info: dict, conventions_block: str) -> dict[str, str]:
         "test_cmd": info["test_cmd"],
         "lint_cmd": info["lint_cmd"] or "",
         "plan_path": info["plan_path"],
-        "key_paths": ", ".join(info["key_paths"]) if info["key_paths"] else "(none detected)",
         "conventions_block": conventions_block,
     }
 

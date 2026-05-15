@@ -12,7 +12,6 @@ Output JSON shape:
   "test_cmd": "...",
   "lint_cmd": "...",      # may be ""
   "plan_path": "docs/implementation-plan.md",
-  "key_paths": ["src/", "tests/"],
   "conventions_file": "conventions/dotnet.md"
 }
 """
@@ -54,7 +53,6 @@ def detect_stack(root: Path) -> dict:
         "test_cmd": "<add test command>",
         "lint_cmd": "",
         "plan_path": "docs/implementation-plan.md",
-        "key_paths": [],
         "conventions_file": "conventions/generic.md",
     }
 
@@ -133,13 +131,6 @@ def detect_stack(root: Path) -> dict:
         if (root / c).exists():
             info["plan_path"] = c
             break
-
-    # Top-level src/test dirs as key paths
-    key = []
-    for name in ("src", "Source", "lib", "tests", "Tests", "test", "spec", "docs", "Docs"):
-        if (root / name).is_dir():
-            key.append(f"{name}/")
-    info["key_paths"] = key
 
     return info
 

@@ -16,7 +16,6 @@ You are a read-only critical reviewer for **{{project_name}}** ({{stack_summary}
 Build command: `{{build_cmd}}`
 Test command: `{{test_cmd}}`
 Plan: `{{plan_path}}`
-Key paths: {{key_paths}}
 
 ## Severity levels
 
