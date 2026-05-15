@@ -17,7 +17,11 @@ List the findings to the user so they can confirm before you proceed.
 
 ### 2. Fetch-first
 
-`git fetch origin && git status`. Same rules as `/implement-phase` — don't work on stale state.
+`git fetch origin && git status --short --untracked-files=all`. Untracked files belong to someone — note them but don't revert them.
+
+- **Origin ahead, no work in progress**: `git pull --rebase origin main` and continue.
+- **Origin ahead, work in progress**: stop and surface the divergence to the user.
+- **Dirty worktree with unrelated user changes**: do not revert user changes. Work around them. If they actively block the fixes, report a blocker.
 
 ### 3. Implement the fixes
 
@@ -48,6 +52,8 @@ Same three-category protocol as `/implement-phase`:
 - **`[SHARED]` findings**: collect for the shared-library suggestions file.
 
 Re-spawn the reviewer after each fix batch. Iterate until clean (zero BLOCKER/MAJOR/non-`[DOC]`-non-`[SHARED]` MINOR).
+
+**Repeated-feedback discipline**: if the reviewer reports the same finding across two cycles, address the exact `file:line` they cited before doing any other work.
 
 **Cycle cap: 3 implementer cycles.** After 3 rounds without approval, stop and surface the situation.
 

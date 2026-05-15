@@ -19,11 +19,17 @@ Parse `$ARGUMENTS` for phase numbers. If provided (e.g. `19` or `19 20 21`), spl
 
 For each target phase, read the relevant section of `{{plan_path}}`. Also check what files from each phase already exist on disk, since a partial implementation may be present.
 
-Report to the user: which phases you're implementing and what each covers. If a phase has open questions or TBDs, stop and ask the user before starting.
+Report to the user: which phases you're implementing and what each covers.
+
+**Plan-ambiguity stop.** Before starting, scan the target phase for unresolved open questions, TBDs, or sections explicitly flagged as needing input. If you find any — or if the current code has drifted from the plan in a way that affects this phase — stop and ask the user. Don't guess on architecture.
 
 ### 2. Fetch-first
 
-Run `git fetch origin && git status` and report what you find. If origin is ahead of local with no work in progress, `git pull --rebase origin main` and continue. If work is in progress and origin has moved, stop and surface the divergence — let the user decide.
+Run `git fetch origin && git status --short --untracked-files=all` and report what you find. Untracked files belong to someone — note them but don't revert them.
+
+- **Origin ahead, no work in progress**: `git pull --rebase origin main` and continue.
+- **Origin ahead, work in progress**: stop and surface the divergence — let the user decide whether to rebase, reset, or proceed.
+- **Dirty worktree with unrelated user changes**: do not revert user changes. Work around them. If they actively block implementation, report a blocker.
 
 ### 3. Implement the phases
 
@@ -73,6 +79,8 @@ Spawn the `review-iterate` agent again with the same prompt. The reviewer audits
 
 Repeat steps 6–7 (you fix code, reviewer audits) until the reviewer returns zero BLOCKER, zero MAJOR, and zero non-`[DOC]` non-`[SHARED]` MINOR findings. `[DOC]` and `[SHARED]` findings do NOT block the review gate. NITs are acceptable but fix the trivial ones.
 
+**Repeated-feedback discipline**: if the reviewer reports the same finding across two cycles, address the exact `file:line` they cited before doing any other work. Don't add adjacent fixes — fix the specific thing first, rebuild, then re-spawn the reviewer.
+
 **Cycle cap: 3 implementer cycles.** If you've done 3 rounds without approval, stop and surface the situation to the user — don't grind indefinitely.
 
 ### 8. Write shared-library suggestions (if any)
@@ -100,7 +108,7 @@ git commit -m "Phase N: <Title>
 <1-3 line summary of what shipped>"
 ```
 
-Do not use `git add -A` (stray files sneak in). Do not use `--no-verify`. Do not push — local commit only; the user pushes when they're ready.
+Do not use `git add -A` (stray files sneak in). Do not use `--no-verify`. Do not push — local commit only; the user pushes when they're ready. **When implementing multiple phases in one run, commit each phase separately as you go; push only after every phase in the run has been committed.**
 
 ### 10. Report
 

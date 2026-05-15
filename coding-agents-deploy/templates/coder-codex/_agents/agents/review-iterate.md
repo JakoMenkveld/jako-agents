@@ -32,11 +32,11 @@ Key paths: {{key_paths}}
 ## Workflow
 
 1. **Fetch-first**: `git fetch origin && git status`. Don't audit stale state.
-2. **Check what changed**: `git diff --stat HEAD~1..HEAD` if committed, else `git diff --stat`. Note files outside the phase's plausible scope.
+2. **Survey what changed — including untracked files.** Run `git status --short --untracked-files=all`, `git diff --check` (catches trailing whitespace and conflict markers), `git diff --stat HEAD~1..HEAD` if committed (else `git diff --stat`), and `git ls-files --others --exclude-standard`. **Untracked files are part of the review surface** — do not approve if relevant implementation files are untracked and you didn't inspect them. Note files outside the phase's plausible scope.
 3. **Read the phase from `{{plan_path}}`** in full — including narrative design sections, not just any "files list".
-4. **Read every file the phase touched.** Use `rg`/`rg --files`/file reads. Prefer parallel reads.
+4. **Read every file the phase touched, including untracked files.** Use `rg`/`rg --files`/file reads. Prefer parallel reads.
 5. **Build**: run `{{build_cmd}}`. Any new error or new warning is BLOCKER.
-6. **Test**: run `{{test_cmd}}`. Any new failure / regression below the prior baseline is BLOCKER.
+6. **Test**: run `{{test_cmd}}`. Any new failure / regression below the prior baseline is BLOCKER. **Passing tests are necessary but not sufficient** — confirm the tests actually prove the phase's acceptance criterion, not just that they execute. A test whose body doesn't exercise the claimed behavior is MAJOR (the coverage is illusory).
 7. **Report findings grouped by severity.** For each: severity, optional `[DOC]`/`[SHARED]` tag, `file:line`, one-sentence description, one-sentence fix suggestion.
 8. **End the report with two collected sections:**
    - **`[DOC] findings for user`** — verbatim list, even when otherwise clean.

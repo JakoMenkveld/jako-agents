@@ -30,11 +30,11 @@ Key paths: {{key_paths}}
 ## Workflow
 
 1. **Fetch-first**: run `git fetch origin && git status` to make sure you're not auditing stale state.
-2. **Check what changed**: `git diff --stat HEAD~1` (or `git diff --stat` if uncommitted) to see which files were actually modified. Note any files outside the phase's plausible scope.
+2. **Survey what changed — including untracked files.** Run `git status --short --untracked-files=all`, `git diff --check` (catches trailing whitespace and conflict markers), `git diff --stat HEAD~1` (or `git diff --stat` if uncommitted), and `git ls-files --others --exclude-standard`. **Untracked files are part of the review surface** — do not approve if relevant implementation files are untracked and you didn't inspect them. Note any files outside the phase's plausible scope.
 3. **Read the phase from `{{plan_path}}`** in full — including narrative design sections (hard write gates, FK requirements, service contracts), not just any "files list" section.
-4. **Read every file the phase touched.** Use `Glob`/`Grep` to find supporting files (DI registration, configurations, seed data, tests).
+4. **Read every file the phase touched, including untracked files.** Use `Glob`/`Grep` to find supporting files (DI registration, configurations, seed data, tests).
 5. **Verify the build**: run `{{build_cmd}}`. Any new error or new warning introduced by the diff is BLOCKER.
-6. **Verify the tests**: run `{{test_cmd}}`. Any new failure or regression below the prior baseline is BLOCKER.
+6. **Verify the tests**: run `{{test_cmd}}`. Any new failure or regression below the prior baseline is BLOCKER. **Passing tests are necessary but not sufficient** — confirm the tests actually prove the phase's acceptance criterion, not just that they execute. A test whose body doesn't exercise the claimed behavior is MAJOR (the coverage is illusory).
 7. **Report findings grouped by severity** (BLOCKER, MAJOR, MINOR, NIT). For each finding: severity, optional `[DOC]`/`[SHARED]` tag, `file:line`, one-sentence description, one-sentence fix suggestion.
 8. **End the report with two collected sections:**
    - **`[DOC] findings for user`** — verbatim list of every `[DOC]` finding. Include this section even when otherwise clean.

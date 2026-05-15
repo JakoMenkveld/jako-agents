@@ -17,7 +17,11 @@ List the findings back to the user to confirm before proceeding.
 
 ### 2. Fetch-first
 
-`git fetch origin && git status`. Same rules as `implement-phase`.
+Run `git fetch origin && git status --short --untracked-files=all`. Untracked files belong to someone — note them but don't revert them.
+
+- **Origin ahead, no work in progress**: `git pull --rebase origin main` and continue.
+- **Origin ahead, work in progress**: stop and surface the divergence.
+- **Dirty worktree with unrelated user changes**: do not revert user changes. Work around them. If they actively block the fixes, report a blocker.
 
 ### 3. Implement the fixes
 
@@ -41,7 +45,11 @@ Spawn `review-iterate` (`.agents/agents/review-iterate.md`):
 
 ### 6. Iterate
 
-Same three-category protocol as `implement-phase`. Cycle cap: 3.
+Same three-category protocol as `implement-phase`.
+
+**Repeated-feedback discipline**: if the reviewer reports the same finding across two cycles, address the exact `file:line` they cited before doing any other work.
+
+**Cycle cap: 3 implementer cycles.** After 3 rounds without approval, stop and surface.
 
 ### 7. Commit locally
 

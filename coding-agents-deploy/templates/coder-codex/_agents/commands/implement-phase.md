@@ -15,11 +15,17 @@ Invoke as `implement-phase 19` (single), `implement-phase 19 20 21` (multi-phase
 
 Parse arguments for phase numbers. If none, read `{{plan_path}}` and pick the lowest-numbered phase without a `✅` in its heading. Read each target phase's section in full.
 
-Report to the user which phases you'll implement. If a phase has open questions or TBDs, stop and ask before starting.
+Report to the user which phases you'll implement.
+
+**Plan-ambiguity stop.** Before starting, scan the target phase for unresolved open questions, TBDs, or sections explicitly flagged as needing input. If you find any — or if the current code has drifted from the plan in a way that affects this phase — stop and ask the user. Don't guess on architecture.
 
 ### 2. Fetch-first
 
-`git fetch origin && git status`. If origin is ahead with no work in progress, `git pull --rebase`. If work in progress and origin moved, surface to the user.
+Run `git fetch origin && git status --short --untracked-files=all`. Untracked files belong to someone — note them but don't revert them.
+
+- **Origin ahead, no work in progress**: `git pull --rebase origin main` and continue.
+- **Origin ahead, work in progress**: stop and surface the divergence — let the user decide.
+- **Dirty worktree with unrelated user changes**: do not revert user changes. Work around them. If they actively block implementation, report a blocker.
 
 ### 3. Implement
 
@@ -55,6 +61,8 @@ Three categories:
 
 Same prompt. Loop steps 6–7 until clean (zero BLOCKER/MAJOR/non-`[DOC]`-non-`[SHARED]` MINOR).
 
+**Repeated-feedback discipline**: if the reviewer reports the same finding across two cycles, address the exact `file:line` they cited before doing any other work.
+
 **Cycle cap: 3 implementer cycles.** After 3 rounds without approval, stop and surface.
 
 ### 8. Commit locally
@@ -66,7 +74,7 @@ git commit -m "Phase N: <Title>
 <1-3 line summary>"
 ```
 
-No `git add -A`. No `--no-verify`. Do not push.
+No `git add -A`. No `--no-verify`. Do not push. **When implementing multiple phases in one run, commit each phase separately as you go; push only after every phase in the run has been committed.**
 
 ### 9. Report
 

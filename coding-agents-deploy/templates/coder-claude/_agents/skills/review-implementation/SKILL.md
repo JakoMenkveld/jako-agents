@@ -46,11 +46,11 @@ When supporting docs are stale but the implementation is correct, treat it as a 
 
 ## Workflow
 
-1. **Survey state.** `git status --short`. Read the selected phase(s) in `{{plan_path}}`, including each phase's `### Work` and `### Acceptance Criteria`, plus surrounding `## Phase Flow`, `## Recommended Execution Order`, `## Open Questions`, and `## Residual Risks`. Read supporting docs in the repo when they overlap the reviewed phases.
+1. **Survey state — including untracked files.** Run `git status --short --untracked-files=all`, `git diff --check`, and `git ls-files --others --exclude-standard`. **Untracked files are part of the review surface** — do not approve if relevant implementation files are untracked and you didn't inspect them. Read the selected phase(s) in `{{plan_path}}`, including each phase's `### Work` and `### Acceptance Criteria`, plus surrounding `## Phase Flow`, `## Recommended Execution Order`, `## Open Questions`, and `## Residual Risks`. Read supporting docs in the repo when they overlap the reviewed phases.
 
-2. **Inspect the diff.** If the phase work is committed, use `git diff --stat HEAD~1..HEAD`; otherwise `git diff --stat` and `git status --short`. Note files outside the phase's plausible scope as possible scope creep.
+2. **Inspect the diff.** If the phase work is committed, use `git diff --stat HEAD~1..HEAD`; otherwise `git diff --stat`. Note files outside the phase's plausible scope as possible scope creep.
 
-3. **Locate implementation files.** Use `rg`, `rg --files`, `git grep`, and direct reads. Prefer parallel reads.
+3. **Locate implementation files.** Use `rg`, `rg --files`, `git grep`, and direct reads — and include the untracked file list from step 1. Prefer parallel reads.
 
 4. **Apply the review checklist (below).** Prioritize bugs, race conditions, data loss, incorrect behavior, schema/contract drift, missing production wiring, and missing tests.
 
@@ -63,7 +63,7 @@ When supporting docs are stale but the implementation is correct, treat it as a 
    - Apply the same markers to every other reference to the reviewed phase elsewhere in the plan.
    - Walk `## Open Questions` (append-only) and `## Residual Risks` (add/remove/reword) per the policy above.
 
-6. **Run verification.** `{{build_cmd}}` always. `{{test_cmd}}` when tests exist. Record which phases the verification covered and note any command that could not be run.
+6. **Run verification.** `{{build_cmd}}` always. `{{test_cmd}}` when tests exist. **Passing tests are necessary but not sufficient** — confirm the tests actually prove each acceptance criterion, not just that they execute. A test whose name implies coverage but whose body doesn't exercise the claimed behavior is a finding. Record which phases the verification covered and note any command that could not be run.
 
 7. **Re-read edited sections** to ensure the plan says what the code actually does.
 

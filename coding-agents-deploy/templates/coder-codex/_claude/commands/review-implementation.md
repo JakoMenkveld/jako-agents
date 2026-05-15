@@ -43,11 +43,11 @@ Repository root is the current workspace. Plan file: `{{plan_path}}`.
 
 ## Workflow
 
-1. **Survey state.** `git status --short`. Read the selected phase(s) in `{{plan_path}}` in full — `### Work`, `### Acceptance Criteria`, surrounding `## Phase Flow`, `## Recommended Execution Order`, `## Open Questions`, `## Residual Risks`. Read supporting docs in the repo when they overlap.
+1. **Survey state — including untracked files.** Run `git status --short --untracked-files=all`, `git diff --check`, and `git ls-files --others --exclude-standard`. **Untracked files are part of the review surface** — do not approve if relevant implementation files are untracked and you didn't inspect them. Read the selected phase(s) in `{{plan_path}}` in full — `### Work`, `### Acceptance Criteria`, surrounding `## Phase Flow`, `## Recommended Execution Order`, `## Open Questions`, `## Residual Risks`. Read supporting docs in the repo when they overlap.
 
-2. **Inspect the diff.** Committed → `git diff --stat HEAD~1..HEAD`. Uncommitted → `git diff --stat` and `git status --short`. Note files outside plausible scope.
+2. **Inspect the diff.** Committed → `git diff --stat HEAD~1..HEAD`. Uncommitted → `git diff --stat`. Note files outside plausible scope.
 
-3. **Locate implementation files.** Use `rg`, `rg --files`, `git grep`, direct reads. Parallel where possible.
+3. **Locate implementation files.** Use `rg`, `rg --files`, `git grep`, direct reads — and include the untracked file list from step 1. Parallel where possible.
 
 4. **Apply the review checklist** (below). Prioritize bugs, race conditions, data loss, incorrect behavior, schema/contract drift, missing production wiring, missing tests.
 
@@ -60,7 +60,7 @@ Repository root is the current workspace. Plan file: `{{plan_path}}`.
    - Apply markers to every other reference to the reviewed phase elsewhere in the plan.
    - Walk `## Open Questions` (append-only) and `## Residual Risks` (add/remove/reword) per the policy above.
 
-6. **Run verification**: `{{build_cmd}}` always; `{{test_cmd}}` when tests exist. Record which phases the verification covered.
+6. **Run verification**: `{{build_cmd}}` always; `{{test_cmd}}` when tests exist. **Passing tests are necessary but not sufficient** — confirm the tests actually prove each acceptance criterion, not just that they execute. A test whose name implies coverage but whose body doesn't exercise the claimed behavior is a finding. Record which phases the verification covered.
 
 7. **Re-read edited sections** to ensure the plan says what the code actually does.
 
