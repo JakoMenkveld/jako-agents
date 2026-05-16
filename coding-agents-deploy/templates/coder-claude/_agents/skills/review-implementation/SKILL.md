@@ -1,6 +1,6 @@
 ---
 name: review-implementation
-description: Review one or more {{project_name}} implementation phases end-to-end against {{plan_path}} and the current codebase. Truthfully update the whole status surface — phase headings, Work/Acceptance bullets, task checkboxes, the Phase Status table, per-phase Status lines, and the Phase Flow Mermaid graph (node labels and class lines) — then commit the review locally and report remaining actionable work. Use when invoked as `/review-implementation` with optional phase numbers or a range.
+description: Review one or more {{project_name}} implementation phases end-to-end against {{plan_path}} and the current codebase. Truthfully update the whole status surface — phase headings, Work/Acceptance bullets, task checkboxes, the Phase Status table, per-phase Status lines, and the Phase Flow Mermaid graph (node labels and class lines) — then commit the review locally and report remaining actionable work. Use when invoked as `/review-implementation`; arguments are interpreted as phase selectors and/or plan-update suggestions, and with no explicit phase it auto-detects and reviews the in-progress phase(s).
 ---
 
 # Review Implementation
@@ -36,7 +36,17 @@ Never invent acceptance criteria, never silently delete plan text, and never lea
 
 ## Inputs
 
-Infer the target phase number(s) from the user. Accept a single number (`phase 1`), an inclusive range (`2 to 5`, `2-5`), comma/word lists (`2, 3, 4 and 5`), or a mix. Normalize to a sorted, de-duplicated list and review in ascending order unless asked otherwise. If no phase number is provided, ask once.
+`$ARGUMENTS` is free-form. Treat every token as **either** a phase selector **or** a plan-update suggestion — a single invocation may carry both at once. Split the arguments into the two kinds:
+
+- **Phase selectors** — anything that denotes phase numbers: a single number (`phase 1`, `1`), an inclusive range (`2 to 5`, `2-5`), or comma/word lists (`2, 3, 4 and 5`). Normalize to a sorted, de-duplicated list and review in ascending order unless asked otherwise.
+- **Plan-update suggestions** — any remaining prose (e.g. "the retry logic moved to the worker", "Phase 4 now depends on Phase 6"). Carry these into the review as hypotheses to verify against the code, and into the status update within the Plan Write Policy. A suggestion never overrides that policy: if acting on it would require a disallowed edit (rewriting acceptance criteria, restructuring phases, editing/resolving an Open Question), apply only what the policy allows and surface the rest to the user instead of performing it.
+
+**Phase selection:**
+- If the arguments contain explicit phase selectors, review exactly those phases.
+- If the arguments contain **no** explicit phase selectors — even when they do carry plan-update suggestions — do NOT ask. Auto-detect instead: review every phase the plan currently marks in-progress (`⚠️`/`⚠` on the heading, the per-phase `Status:` line, the `## Phase Status` table cell, or the plan's own in-progress legend such as `class Pn inProgress`), in ascending order.
+- If no phase is explicitly given and none is marked in-progress, fall back to the lowest-numbered phase that has implementation on disk but is not yet marked complete. If even that is ambiguous, ask once.
+
+Plan-update suggestions apply to whichever phases end up selected, including auto-detected in-progress phases.
 
 Repository root is the current workspace. Plan file: `{{plan_path}}`.
 
@@ -99,7 +109,7 @@ When no phases require review, leave the plan untouched and do not create an emp
 
 ## Final Response
 
-Return one plain-text paragraph describing only what is still outstanding for the reviewed phase(s). Mention each outstanding item inline by phase number with the concrete file, test, command, or behavior that needs to change. Convert every remaining `⚠️ [partial: reason]` marker into a concrete next action inside the same paragraph. If you appended an Open Question during this review and it needs the user's attention, mention it in the same paragraph as `Open Question: ...`.
+Return one plain-text paragraph describing only what is still outstanding for the reviewed phase(s). Mention each outstanding item inline by phase number with the concrete file, test, command, or behavior that needs to change. When you auto-detected the phase(s) because no explicit selector was given, begin the response with a single short clause naming the phase(s) reviewed and why (e.g. `Auto-detected in-progress Phase 4; ` or `No phase in-progress, fell back to Phase 7; `) and then continue with the outstanding-work paragraph or the exact no-outstanding sentence below. Convert every remaining `⚠️ [partial: reason]` marker into a concrete next action inside the same paragraph. If you appended an Open Question during this review and it needs the user's attention, mention it in the same paragraph as `Open Question: ...`.
 
 Do not include headings, bullet lists, task-list syntax, code fences, severity labels, review narrative, verification history, documentation summaries, or any list of unchanged areas. Do not end with an offer or a summary sentence.
 

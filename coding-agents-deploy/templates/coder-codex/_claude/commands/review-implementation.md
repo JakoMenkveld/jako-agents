@@ -1,5 +1,5 @@
 ---
-description: Review one or more {{project_name}} implementation phases against {{plan_path}} and the current codebase, truthfully update the whole status surface (phase headings, Work/Acceptance bullets, task checkboxes, the Phase Status table, per-phase Status lines, and the Phase Flow Mermaid graph — node labels and class lines), commit the review locally, and report remaining actionable work.
+description: Review one or more {{project_name}} implementation phases against {{plan_path}} and the current codebase, truthfully update the whole status surface (phase headings, Work/Acceptance bullets, task checkboxes, the Phase Status table, per-phase Status lines, and the Phase Flow Mermaid graph — node labels and class lines), commit the review locally, and report remaining actionable work. Arguments are interpreted as phase selectors and/or plan-update suggestions; with no explicit phase it auto-detects and reviews the in-progress phase(s).
 ---
 
 # review-implementation
@@ -35,7 +35,17 @@ Never invent acceptance criteria, never silently delete plan text, and never lea
 
 ## Inputs
 
-Infer the target phase number(s) from the user. Accept a single number (`phase 1`), an inclusive range (`2 to 5`, `2-5`), comma/word lists (`2, 3, 4 and 5`), or a mix. Normalize to a sorted, de-duplicated list. If no phase number is provided, ask once.
+`$ARGUMENTS` is free-form. Every token is **either** a phase selector **or** a plan-update suggestion; one invocation may carry both. Split them:
+
+- **Phase selectors** — single number (`phase 1`, `1`), inclusive range (`2 to 5`, `2-5`), comma/word lists (`2, 3, 4 and 5`). Normalize to a sorted, de-duplicated list, ascending.
+- **Plan-update suggestions** — remaining prose. Carry into the review as hypotheses to verify against the code, and into the status update within the Plan Write Policy. A suggestion never overrides the policy: if it requires a disallowed edit (rewriting acceptance criteria, restructuring phases, editing/resolving an Open Question), apply only what's allowed and surface the rest to the user.
+
+Phase selection:
+- Explicit selectors present → review exactly those phases.
+- No explicit selectors (even when plan-update suggestions are present) → do NOT ask. Auto-detect: review every phase the plan marks in-progress (`⚠️`/`⚠` heading, per-phase `Status:` line, `## Phase Status` cell, or the plan's in-progress legend such as `class Pn inProgress`), ascending.
+- No explicit phase and none in-progress → fall back to the lowest-numbered phase with implementation on disk not yet marked complete; if still ambiguous, ask once.
+
+Suggestions apply to whichever phases are selected, including auto-detected ones.
 
 Repository root is the current workspace. Plan file: `{{plan_path}}`.
 
@@ -96,7 +106,7 @@ When no phases require review, leave the plan untouched and do not create an emp
 
 ## Final Response
 
-Return one plain-text paragraph describing only what is still outstanding. Mention each outstanding item inline by phase number with the concrete file, test, command, or behavior that needs to change. Convert every remaining `⚠️ [partial: reason]` into a concrete next action. If you appended an Open Question during this review and it needs the user's attention, mention it in the same paragraph as `Open Question: ...`.
+Return one plain-text paragraph describing only what is still outstanding. Mention each outstanding item inline by phase number with the concrete file, test, command, or behavior that needs to change. When you auto-detected the phase(s) because no explicit selector was given, begin with a single short clause naming the phase(s) reviewed and why (e.g. `Auto-detected in-progress Phase 4; `) before the outstanding-work paragraph or the exact no-outstanding sentence below. Convert every remaining `⚠️ [partial: reason]` into a concrete next action. If you appended an Open Question during this review and it needs the user's attention, mention it in the same paragraph as `Open Question: ...`.
 
 Do not include headings, bullet lists, task-list syntax, code fences, severity labels, review narrative, verification history, documentation summaries, or any list of unchanged areas. Do not end with an offer or a summary sentence.
 

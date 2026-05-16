@@ -250,6 +250,8 @@ It uses the plan's own legend when one is declared (a `Legend:` line, status-tab
 
 The generic implementer/inner-reviewer agents (`implement-phase`, `implement-fixes`, `review-iterate`, `review-and-fix`) never touch or report any of these markers; stale status is not a finding for them.
 
+`review-implementation` arguments are free-form: every token is interpreted as **either** a phase selector (number, range, comma/word list) **or** a plan-update suggestion, and a single invocation may carry both. Plan-update suggestions are verified against the code and folded into the status update, but never override the narrow Plan Write Policy. When no explicit phase selector is supplied — even alongside suggestions — `review-implementation` does not ask; it auto-detects and reviews every phase the plan marks in-progress (heading/`Status:`/Phase Status/`class … inProgress`), falling back to the lowest-numbered incomplete phase that has implementation on disk, and only asking once if that is still ambiguous. This mirrors `implement-phase`'s in-progress auto-detect.
+
 ## Frontmatter Conventions
 
 Claude commands in `.claude/commands/X.md`:
