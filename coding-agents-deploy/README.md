@@ -10,7 +10,9 @@ Every role also deploys a **`review-and-fix`** skill to both Claude and Codex â€
 
 ## How it works
 
-The skill scans a target project, detects its stack (build/test commands, framework conventions, plan file path), then renders a parameterized template tree into the project. Existing files are backed up with a timestamped `.bak.` suffix before being replaced, and a diff summary is printed.
+The skill scans a target project, detects its stack (build/test commands, framework conventions, plan file path), then renders a parameterized template tree into the project. Existing files are backed up with a timestamped `.bak.` suffix before being changed. In merge mode, existing Markdown agent files are merged by heading so project-specific sections survive, conflicts can be resolved interactively, and useful project-only additions can be promoted back into this repo's templates for future deployments.
+
+The deploy also ensures an implementation plan exists. If the detected plan path is missing, it creates a starter canonical plan. If a plan exists, it backs it up and fills missing structural sections without deleting existing plan content.
 
 ## Invocation
 
@@ -31,8 +33,7 @@ deploy-coding-agents/
   SKILL.md                  # entry point invoked by Claude / Cowork
   scripts/
     detect_stack.py         # inspects target project, emits JSON
-    deploy.py               # renders templates into target with backups + diff
-    render.py               # placeholder substitution helper
+    deploy.py               # renders/merges templates, manages plan file, prints summary
   templates/
     common/                 # AGENTS.md, CLAUDE.md, .claude/settings.json
     coder-claude/           # role: Claude codes, Codex reviews (+ review-and-fix in both lanes)
@@ -98,10 +99,31 @@ The script:
 
 The skill is picked up by Claude Code on the next session start.
 
+Run the deploy tests after changing merge or plan-repair behavior:
+
+```powershell
+python -m unittest discover -s .\tests
+```
+
 ## Repo context
 
 This skill lives in the [`jako-agents`](https://github.com/JakoMenkveld/jako-agents) meta-repo, alongside other agentic-work definitions. Commit, push, and pull from the parent `c:\vsprojects\jako-agents` directory.
 
+## Merge-aware deploy
+
+For normal use, deploy with:
+
+```powershell
+python .\scripts\deploy.py --target C:\path\to\project --role codex-codes --merge-existing
+```
+
+Useful flags:
+
+- `--template-updates ask|never|always` controls whether project-only ideas can update `templates/`.
+- `--interactive auto|always|never` controls conflict prompts.
+- `--skip-plan` leaves the implementation plan untouched.
+- `--dry-run` prints planned operations without writing.
+
 ## Status
 
-This is v1. The templates are skeletons derived from the `omnis/gold` (Claude-codes pattern) and `swissinc/tuple` (Codex-codes pattern) projects. Stack-specific content lives in `conventions/`; project-specific content is injected at deploy time.
+This is v1. The templates are skeletons derived from the `omnis/gold` (Claude-codes pattern) and `swissinc/tuple` (Codex-codes pattern) projects. Stack-specific content lives in `conventions/`; project-specific content is injected at deploy time, and broadly reusable project discoveries can be promoted into the templates through merge-aware deploys.

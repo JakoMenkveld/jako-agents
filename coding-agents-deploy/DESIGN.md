@@ -4,7 +4,7 @@ Canonical reference for the current `deploy-coding-agents` skill. This document 
 
 ## Purpose
 
-`deploy-coding-agents` installs a coordinated Claude + Codex coding-agent setup into a target project. Given a target path and role assignment, it renders:
+`deploy-coding-agents` installs a coordinated Claude + Codex coding-agent setup into a target project. Given a target path and role assignment, it renders or merges:
 
 - `AGENTS.md`
 - `CLAUDE.md`
@@ -12,6 +12,8 @@ Canonical reference for the current `deploy-coding-agents` skill. This document 
 - `.agents/` commands, agents, skills, and skill manifests
 
 The rendered output is tailored with detected stack information, build/test commands, the implementation-plan path, and stack-specific conventions.
+
+When the target already has agent files, merge-aware deploys preserve project-only content, ask the user how to resolve same-section conflicts when interactive, and can promote reusable project ideas back into this repository's source templates before the target project is updated.
 
 ## Source Layout
 
@@ -96,8 +98,22 @@ The setup has two lanes: Claude and Codex. The coding lane gets the rich impleme
 3. `scripts/deploy.py --target <path> --role <role>` loads that metadata and the selected conventions file.
 4. The deploy script renders `templates/common/` plus the selected role template tree.
 5. Placeholders in the form `{{var}}` are replaced with detected values.
-6. Existing destination files are moved to `<filename>.bak.<YYYYMMDD-HHMMSS>` unless `--no-backup` is supplied.
-7. `--dry-run` prints the file operations without writing.
+6. Existing destination files are handled according to mode:
+   - Default mode: move the existing destination to `<filename>.bak.<YYYYMMDD-HHMMSS>` unless `--no-backup` is supplied, then replace it.
+   - `--merge-existing`: merge Markdown files by heading, preserve project-only sections, ask about conflicts when interactive, and optionally promote reusable project additions into `templates/`.
+7. The deploy ensures the detected implementation plan exists unless `--skip-plan` is supplied. Missing plans get a starter canonical skeleton. Existing plans are backed up before structural repair unless `--no-backup` is supplied.
+8. `--dry-run` prints the file operations without writing.
+
+## Merge Contract
+
+`scripts/deploy.py --merge-existing` is conservative:
+
+- Existing project-only Markdown sections are preserved in the project.
+- Same-heading conflicts default to the project version when non-interactive.
+- Interactive conflicts ask whether to keep the project version, use the template version, or append the project body after the template body.
+- Project-only sections/files and project-side conflict resolutions are promoted into source templates only when `--template-updates always` is supplied or the user answers yes under `--template-updates ask`.
+- Non-Markdown conflicts are not structurally merged; the user chooses project or template when interactive, and non-interactive merge mode keeps the project file.
+- Promoted content is best-effort "unrendered" by replacing current substitution values with `{{...}}` placeholders before writing under `templates/`.
 
 ## Substitution Variables
 
@@ -195,6 +211,12 @@ The deployed workflows share these rules:
 ```
 
 Phase headings use `## Phase N: <Title>` as the canonical form. Phase numbering is contiguous. `review-and-fix` may add missing structural sections with placeholders, normalize supported style issues, and create a new skeleton plan. It does not rewrite existing non-placeholder content, status markers, or existing `## Open Questions` entries.
+
+The deploy script also enforces a minimum plan skeleton:
+
+- If no file exists at `{{plan_path}}`, deploy creates a starter implementation plan with one placeholder phase.
+- If a plan exists, deploy repairs missing structural sections and per-phase `### Work` / `### Acceptance Criteria` blocks, preserving existing content.
+- Existing plans are backed up before repair unless `--no-backup` is supplied.
 
 Status markers are written by `review-implementation`:
 
