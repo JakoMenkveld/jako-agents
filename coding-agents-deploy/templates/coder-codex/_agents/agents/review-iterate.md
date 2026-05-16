@@ -52,7 +52,8 @@ Apply selectively but explicitly — skip an item only when irrelevant.
 - **Hard write gates.** Every "must reference X" / "is rejected when Y" statement in the phase's design section has matching enforcement. Missing enforcement → MAJOR.
 - **Race conditions.** Shared-state insert/update paths under concurrent callers — describe the interleaving, flag MAJOR.
 - **Transactions.** Where plan says "atomic with X", verify the boundary covers X.
-- **Tests.** New behaviour has a test. Test names match what the body asserts (misleading names → MINOR).
+- **Tests.** New behaviour has a test. Test names and any leading comment match what the test body actually verifies. A test named for a failure path that only exercises the happy path is MINOR — it misleads future readers and masks missing coverage.
+- **Expected-fail markers.** A test marked as expected-to-fail that now passes (the expected failure didn't happen) means the implementation works and the expected-fail marker should be removed — flag as MINOR.
 - **Dead code hygiene.** New `using`/`import` has a usage. New public members have a consumer. New private fields are read.
 - **Comment density.** Default is no comments. Allowed: comments explaining a non-obvious *why*. Narration is MINOR.
 - **No backward-compat shims** unless the plan explicitly scopes one.

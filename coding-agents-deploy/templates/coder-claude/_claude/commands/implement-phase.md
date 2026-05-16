@@ -1,5 +1,5 @@
 ---
-description: Implement one or more phases (by number) from {{plan_path}}, review with the read-only review-iterate agent, iterate fixes until clean, then commit locally. If no phase numbers are provided, auto-detects the next unimplemented phase.
+description: Implement one or more phases (by number) from {{plan_path}}, review with the read-only review-iterate agent, iterate fixes until clean, then commit locally. If no phase numbers are provided, auto-detects the in-progress phase, otherwise the next unimplemented one (never a blocked phase).
 aliases: [iphase, next-phase]
 ---
 
@@ -7,7 +7,7 @@ aliases: [iphase, next-phase]
 
 Implement one or more phases from `{{plan_path}}`, spawn the read-only `review-iterate` agent to audit them, implement any findings yourself, re-spawn the reviewer, and iterate until the reviewer reports clean. Then commit locally.
 
-Invoke as `/implement-phase 19` (single phase) or `/implement-phase 19 20 21` (multiple phases). Comma-separated also works: `/implement-phase 19,20,21`. If no phase numbers are provided, the command auto-detects the lowest-numbered phase not yet marked complete.
+Invoke as `/implement-phase 19` (single phase) or `/implement-phase 19 20 21` (multiple phases). Comma-separated also works: `/implement-phase 19,20,21`. If no phase numbers are provided, the command auto-detects: the in-progress phase if there is one (finish it before starting anything new), otherwise the lowest-numbered phase not yet marked complete. It never auto-starts a phase the plan flags as blocked.
 
 When implementing multiple phases, implement them all before building, testing, and reviewing as a single batch.
 
@@ -15,11 +15,11 @@ When implementing multiple phases, implement them all before building, testing, 
 
 ### 1. Determine which phases to implement
 
-Parse `$ARGUMENTS` for phase numbers. If provided (e.g. `19` or `19 20 21`), split on spaces and/or commas. If no arguments are provided, read `{{plan_path}}` and identify the lowest-numbered phase NOT marked complete (no `✅` in its heading) — implement just that one.
+Parse `$ARGUMENTS` for phase numbers. If provided (e.g. `19` or `19 20 21`), split on spaces and/or commas. If no arguments are provided, read `{{plan_path}}` and auto-detect the target phase in this order: (1) the lowest-numbered phase marked in-progress (a `⚠️`/`⚠` marker on its heading) — carry its unfinished work to completion before starting anything new; (2) if none is in-progress, the lowest-numbered phase with no `✅` completion marker; (3) never auto-select a phase the plan flags as blocked or gated on unresolved open questions — if such a phase is the only candidate or is explicitly named, surface it and stop (clearing the block is the user's).
 
-For each target phase, read the relevant section of `{{plan_path}}`. Also check what files from each phase already exist on disk, since a partial implementation may be present.
+For each target phase, read the relevant section of `{{plan_path}}`, then reconcile the plan against disk to find only what still needs implementing: for each task or file the phase calls out, check whether it already exists and satisfies the plan. Skip work that is already complete; implement only the outstanding remainder. Treat status bookkeeping only as a signal of intended scope, never edit it.
 
-Report to the user: which phases you're implementing and what each covers.
+Report to the user: which phases you're implementing and what each covers — and when auto-detected, which phase you chose, whether it was explicit or auto-detected and why, and what you found already done.
 
 **Plan-ambiguity stop.** Before starting, scan the target phase for unresolved open questions, TBDs, or sections explicitly flagged as needing input. If you find any — or if the current code has drifted from the plan in a way that affects this phase — stop and ask the user. Don't guess on architecture.
 
@@ -110,7 +110,11 @@ git commit -m "Phase N: <Title>
 
 Do not use `git add -A` (stray files sneak in). Do not use `--no-verify`. Do not push — local commit only; the user pushes when they're ready. **When implementing multiple phases in one run, commit each phase separately as you go; push only after every phase in the run has been committed.**
 
-### 10. Report
+### 10. Capture lessons learned
+
+Reflect on patterns that emerged this run. If anything is generally useful — a recurring fix, a convention the reviewer kept flagging, a step that needed clarifying — update this command file, the sibling `implement-fixes` command (keep the two in sync where they overlap), and the `review-iterate` agent checklist. The `.claude/` directory is gitignored, so these updates stay local: they won't appear in the commit, but they persist for future sessions in this project.
+
+### 11. Report
 
 Per phase: one terse line. `Phase N (<Title>) — implemented, build clean, tests <X>/<Y>, committed <short-sha>.`
 

@@ -50,7 +50,8 @@ Apply selectively but explicitly — skip an item only when it's irrelevant to t
 - **Hard write gates.** Every "must reference an existing X" / "is rejected when Y" statement in the phase's design section has matching enforcement code. Missing enforcement is MAJOR.
 - **Race conditions.** Shared-state insert/update paths under concurrent callers — describe the interleaving and flag as MAJOR.
 - **Transactions.** Where the plan says "atomic with X", verify the transaction boundary actually covers X.
-- **Tests.** Every new behaviour has a test that exercises it. Test names/docstrings match what the body actually verifies (misleading names are MINOR).
+- **Tests.** Every new behaviour has a test that exercises it. Test names and any leading comment match what the test body actually verifies. A test named for a failure path that only exercises the happy path is MINOR — it misleads future readers and masks missing coverage.
+- **Expected-fail markers.** A test marked as expected-to-fail that now passes (the expected failure didn't happen) means the implementation works and the expected-fail marker should be removed — flag as MINOR.
 - **Dead code hygiene.** New `using`/`import` statements have a usage in the same file. New public members have at least one consumer. New private fields are read somewhere.
 - **Comment density.** Default is no comments. Allowed: comments explaining a non-obvious *why*. Narration of what the code already says is MINOR.
 - **No backward-compat shims** unless the plan explicitly scopes one (e.g., a UI module migration). Backward-compat sneak-ins are MAJOR.

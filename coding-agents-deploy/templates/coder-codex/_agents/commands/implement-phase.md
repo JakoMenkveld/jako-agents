@@ -1,21 +1,21 @@
 ---
 name: implement-phase
-description: Implement one or more phases (by number) from {{plan_path}}, review with the read-only review-iterate agent, iterate fixes until clean, then commit locally. If no phase numbers are provided, auto-detects the next unimplemented phase.
+description: Implement one or more phases (by number) from {{plan_path}}, review with the read-only review-iterate agent, iterate fixes until clean, then commit locally. If no phase numbers are provided, auto-detects the in-progress phase, otherwise the next unimplemented one (never a blocked phase).
 ---
 
 # implement-phase
 
 Implement one or more phases from `{{plan_path}}`, spawn the read-only `review-iterate` agent to audit, fix any findings yourself, re-spawn the reviewer, and iterate until clean. Then commit locally.
 
-Invoke as `implement-phase 19` (single), `implement-phase 19 20 21` (multi-phase), or with no arguments to auto-detect the lowest-numbered phase not yet marked complete.
+Invoke as `implement-phase 19` (single), `implement-phase 19 20 21` (multi-phase), or with no arguments to auto-detect: the in-progress phase if there is one (finish it before starting anything new), otherwise the lowest-numbered phase not yet marked complete. It never auto-starts a phase the plan flags as blocked.
 
 ## Steps
 
 ### 1. Determine phases
 
-Parse arguments for phase numbers. If none, read `{{plan_path}}` and pick the lowest-numbered phase without a `✅` in its heading. Read each target phase's section in full.
+Parse arguments for phase numbers. If none, read `{{plan_path}}` and auto-detect the target phase in this order: (1) the lowest-numbered phase marked in-progress (a `⚠️`/`⚠` marker on its heading) — carry its unfinished work to completion before starting anything new; (2) if none is in-progress, the lowest-numbered phase with no `✅` completion marker; (3) never auto-select a phase the plan flags as blocked or gated on unresolved open questions — if such a phase is the only candidate or is explicitly named, surface it and stop (clearing the block is the user's). Read each target phase's section in full, then reconcile the plan against disk: for each task or file the phase calls out, check whether it already exists and satisfies the plan, skip what is already complete, and implement only the outstanding remainder. Treat status bookkeeping only as a signal of intended scope, never edit it.
 
-Report to the user which phases you'll implement.
+Report to the user which phases you'll implement — and when auto-detected, which phase you chose, whether it was explicit or auto-detected and why, and what you found already done.
 
 **Plan-ambiguity stop.** Before starting, scan the target phase for unresolved open questions, TBDs, or sections explicitly flagged as needing input. If you find any — or if the current code has drifted from the plan in a way that affects this phase — stop and ask the user. Don't guess on architecture.
 
@@ -76,7 +76,11 @@ git commit -m "Phase N: <Title>
 
 No `git add -A`. No `--no-verify`. Do not push. **When implementing multiple phases in one run, commit each phase separately as you go; push only after every phase in the run has been committed.**
 
-### 9. Report
+### 9. Capture lessons learned
+
+Reflect on patterns that emerged this run. If anything is generally useful — a recurring fix, a convention the reviewer kept flagging, a step that needed clarifying — update this command file, the sibling `implement-fixes` command (keep the two in sync where they overlap), and the `review-iterate` agent checklist. The `.agents/` directory is gitignored, so these updates stay local: they won't appear in the commit, but they persist for future sessions in this project.
+
+### 10. Report
 
 Per phase, one terse line. At the end, output the consolidated list of `[DOC]` findings across all review passes plus any `[SHARED]` findings written.
 
