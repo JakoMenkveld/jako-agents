@@ -1,0 +1,4 @@
+interface:
+  display_name: "Archive Plan"
+  short_description: "Archive the completed {{project_name}} plan into a dated archive/ file and start a fresh, task-free plan."
+  default_prompt: "/archive-plan"

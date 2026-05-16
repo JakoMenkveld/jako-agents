@@ -72,8 +72,8 @@ The setup has two lanes: Claude and Codex. The coding lane gets the rich impleme
 
 | Role | Coder lane | Reviewer lane |
 |------|------------|---------------|
-| `claude-codes` | `.claude/commands/{implement-phase,implement-fixes,commit-and-sync,review-and-fix}.md` and `.claude/agents/review-iterate.md` | `.agents/skills/{review-implementation,review-and-fix}/` |
-| `codex-codes` | `.agents/commands/{implement-phase,implement-fixes,commit-and-sync,review-and-fix}.md`, `.agents/agents/review-iterate.md`, and `.agents/skills/<command>/` shims | `.claude/commands/{review-implementation,review-and-fix}.md` |
+| `claude-codes` | `.claude/commands/{implement-phase,implement-fixes,commit-and-sync,review-and-fix}.md` and `.claude/agents/review-iterate.md` | `.agents/skills/{review-implementation,archive-plan,review-and-fix}/` |
+| `codex-codes` | `.agents/commands/{implement-phase,implement-fixes,commit-and-sync,review-and-fix}.md`, `.agents/agents/review-iterate.md`, and `.agents/skills/<command>/` shims | `.claude/commands/{review-implementation,archive-plan,review-and-fix}.md` |
 | `both` | Union of both coder lanes | Union of both reviewer lanes |
 
 `review-and-fix` is present in both lanes for every role because plan creation and plan repair are shared operations.
@@ -86,7 +86,8 @@ The setup has two lanes: Claude and Codex. The coding lane gets the rich impleme
 | `implement-fixes` | Coder only | Apply user-provided findings, run the inner review loop, and commit locally. |
 | `commit-and-sync` | Coder only | Commit working-tree changes, push, and optionally create a semver release or explicit tag. |
 | `review-iterate` | Coder inner reviewer | Read-only critical reviewer used inside implementation loops. Claude uses Sonnet; Codex uses `gpt-5.5` with medium reasoning effort. |
-| `review-implementation` | Outer reviewer | Review one or more implementation phases, update plan status markers within its narrow write policy, and commit the review locally. |
+| `review-implementation` | Outer reviewer | Review one or more implementation phases, update the full plan status surface (headings, Work/Acceptance bullets, checkboxes, Phase Status table, per-phase Status lines, Phase Flow Mermaid node labels + class lines) in the plan's own legend within its narrow write policy, and commit the review locally. |
+| `archive-plan` | Outer reviewer | Archive a fully-completed plan into a dated `archive/` file and start a fresh, task-free plan that carries forward only durable context. Refuses to run while any task is outstanding and asks the user how to proceed. |
 | `review-and-fix` | Both lanes | Create a canonical implementation plan or repair structural gaps in an existing one. |
 
 `AGENTS.md` is the shared instruction source. `CLAUDE.md` inherits it with `@AGENTS.md`.
@@ -102,7 +103,18 @@ The setup has two lanes: Claude and Codex. The coding lane gets the rich impleme
    - Default mode: move the existing destination to `<filename>.bak.<YYYYMMDD-HHMMSS>` unless `--no-backup` is supplied, then replace it.
    - `--merge-existing`: merge Markdown files by heading, preserve project-only sections, ask about conflicts when interactive, and optionally promote reusable project additions into `templates/`.
 7. The deploy ensures the detected implementation plan exists unless `--skip-plan` is supplied. Missing plans get a starter canonical skeleton. Existing plans are backed up before structural repair unless `--no-backup` is supplied.
-8. `--dry-run` prints the file operations without writing.
+8. Unless `--no-gitignore` is supplied and the target is inside a git repository, the deployed agent scaffolding is added to the repo-root `.gitignore` inside a managed block (see Gitignore Contract).
+9. `--dry-run` prints the file operations without writing.
+
+## Gitignore Contract
+
+The deploy keeps agent scaffolding out of version control by default:
+
+- Scope: every file the deploy writes under `.claude/` or `.agents/`, plus `AGENTS.md` / `CLAUDE.md`. The implementation plan and all other project files are out of scope and stay tracked.
+- Per-path exception: a path is **not** ignored when git already tracks it before the deploy (the project version-controls it on purpose — "it existed previously and was not gitignored"). Git-tracked status, not mere on-disk presence, is the signal, so wiping the managed block and redeploying self-heals instead of leaking scaffolding.
+- The entries live in a single managed block (delimited by `# >>> coding-agents (managed by deploy.py) … >>>` / `# <<< … <<<`) at the repository root's `.gitignore`, with repo-root-relative anchored paths. The block is rewritten idempotently each deploy; content outside it is preserved.
+- To start tracking a scaffolding file, `git add` it: the next deploy sees it tracked and drops it from the managed block.
+- `--no-gitignore` disables the behavior; a non-git target is skipped with a reported note. `--dry-run` reports the change without writing.
 
 ## Merge Contract
 
@@ -153,7 +165,8 @@ If no candidate exists, the default is `docs/implementation-plan.md`. The detect
 The deployed workflows share these rules:
 
 - Severity levels are `BLOCKER`, `MAJOR`, `MINOR`, `NIT`, and `DOC`; reviewers may also tag shared-library suggestions with `[SHARED]`.
-- Inner reviewers are read-only and do not edit files.
+- Inner reviewers are read-only and do not edit files. The inner reviewer (`review-iterate`) never commits, stages, or changes git state — committing is the calling implementer command's job.
+- Outer reviewers commit locally when they finish. `review-implementation` commits whenever it changed the plan; `archive-plan` commits the archive move plus the fresh plan. Neither pushes. (An empty commit is never created when there was nothing to write.)
 - Workflows survey git state before making or reviewing changes, including untracked files.
 - Untracked implementation files are part of the review surface.
 - Dirty worktrees are preserved; unrelated user changes are not reverted.
@@ -163,7 +176,8 @@ The deployed workflows share these rules:
 - `git diff --check` is a standard verification step.
 - Passing tests are necessary but not sufficient; reviewers check that tests prove the relevant acceptance criteria.
 - Generic agents do not edit plan status markers. `review-implementation` is the explicit exception and may update markers under its plan write policy.
-- `## Open Questions` is append-only. Existing entries are not edited, reordered, resolved, or removed by the agents.
+- `archive-plan` (reviewer lane) is the only operation that retires a plan: it refuses to run while any task is outstanding, moves the completed plan into a dated `archive/` file, and writes a fresh task-free plan carrying forward only durable context. The new plan contains no status markers.
+- `## Open Questions` is append-only. Existing entries are not edited, reordered, resolved, or removed by the agents — but `archive-plan` may carry still-open entries forward into a fresh plan (renumbered) and drop resolved ones, since it is starting a new plan, not editing the live one.
 - Final review output is terse and focused on outstanding work.
 
 ## Plan Contract
@@ -175,7 +189,10 @@ The deployed workflows share these rules:
 <summary paragraph>
 
 ## Phase Flow
-<mermaid flowchart>
+<mermaid flowchart — may carry per-node status via classDef/class lines>
+
+## Phase Status
+<optional status table — | Phase | Status | … |>
 
 ## Recommended Execution Order
 <numbered phase list>
@@ -218,11 +235,20 @@ The deploy script also enforces a minimum plan skeleton:
 - If a plan exists, deploy repairs missing structural sections and per-phase `### Work` / `### Acceptance Criteria` blocks, preserving existing content.
 - Existing plans are backed up before repair unless `--no-backup` is supplied.
 
-Status markers are written by `review-implementation`:
+Status markers are written **only** by `review-implementation`, which owns the *entire* status surface of a reviewed phase and updates every part of it consistently in a single local commit:
+
+- Phase heading, `### Work` / `### Acceptance Criteria` bullets, and `## Recommended Execution Order` entries.
+- Task/checklist checkboxes (`- [ ]` → `- [x]`) and file-inventory bullets.
+- A per-phase `Status:` line and a `## Phase Status` table, when the plan has them.
+- The `## Phase Flow` Mermaid graph — both the icon embedded in a node label and the `class <node> <className>` line, kept consistent with the diagram's `classDef` names.
+
+It uses the plan's own legend when one is declared (a `Legend:` line, status-table legend, or Mermaid `classDef` names such as `done`/`inProgress`/`pending`/`blocked`). Only when the plan declares none does it default to:
 
 - `✅` means complete.
 - `⚠️` or `⚠` means partial and includes a concise bracketed reason.
 - No marker means not started, not reviewed, or not status-marked yet.
+
+The generic implementer/inner-reviewer agents (`implement-phase`, `implement-fixes`, `review-iterate`, `review-and-fix`) never touch or report any of these markers; stale status is not a finding for them.
 
 ## Frontmatter Conventions
 

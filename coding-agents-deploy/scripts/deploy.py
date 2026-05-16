@@ -43,6 +43,8 @@ PHASE_RE = re.compile(
     re.IGNORECASE | re.MULTILINE,
 )
 MANAGED_TOP_LEVEL_FILES = {Path("AGENTS.md"), Path("CLAUDE.md")}
+GITIGNORE_BEGIN = "# >>> coding-agents (managed by deploy.py) — do not edit inside this block >>>"
+GITIGNORE_END = "# <<< coding-agents (managed by deploy.py) <<<"
 
 
 @dataclass
@@ -894,6 +896,124 @@ def ensure_plan_file(
         write_text(path, repaired)
 
 
+def git_repo_root(target: Path) -> Path | None:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(target), "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, check=True,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        return None
+    root = result.stdout.strip()
+    return Path(root).resolve() if root else None
+
+
+def git_path_tracked(repo_root: Path, abs_path: Path) -> bool:
+    """True when git already has this path in the index/HEAD — i.e. the project
+    deliberately version-controls it (it "existed previously and was not gitignored",
+    and was committed). Untracked paths are deploy scaffolding."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "ls-files", "--error-unmatch", "--", str(abs_path)],
+            capture_output=True, text=True,
+        )
+    except (FileNotFoundError, OSError):
+        return False
+    return result.returncode == 0
+
+
+def gitignore_candidate_rels(skill_root: Path, role: str) -> list[Path]:
+    """Translated target-relative paths the deploy writes that are agent scaffolding:
+    everything under `.claude/` or `.agents/`, plus `AGENTS.md` / `CLAUDE.md`. The
+    implementation plan and other project docs are intentionally excluded — they stay
+    tracked."""
+    roots = [skill_root / "templates" / "common"]
+    if role in ("claude-codes", "both"):
+        roots.append(skill_root / "templates" / "coder-claude")
+    if role in ("codex-codes", "both"):
+        roots.append(skill_root / "templates" / "coder-codex")
+    rels: set[Path] = set()
+    for root in roots:
+        if not root.is_dir():
+            continue
+        for rel, _abs in iter_template_files(root):
+            top = rel.parts[0] if rel.parts else ""
+            if top in (".claude", ".agents") or rel in MANAGED_TOP_LEVEL_FILES:
+                rels.add(rel)
+    return sorted(rels)
+
+
+def snapshot_gitignore_state(
+    target: Path, repo_root: Path, rels: list[Path]
+) -> dict[Path, bool]:
+    """Capture, BEFORE any file is written, whether git already tracks each path.
+    A tracked path is one the project version-controls on purpose — it must stay
+    visible (never auto-ignored), regardless of what the deploy writes over it."""
+    return {rel: git_path_tracked(repo_root, target / rel) for rel in rels}
+
+
+def _strip_managed_block(text: str) -> str:
+    if GITIGNORE_BEGIN not in text:
+        return text
+    start = text.index(GITIGNORE_BEGIN)
+    end_marker = text.find(GITIGNORE_END)
+    head = text[:start].rstrip("\n")
+    if end_marker == -1:
+        return (head + "\n") if head else ""
+    rest = text[end_marker + len(GITIGNORE_END):]
+    rest = rest[1:] if rest.startswith("\n") else rest
+    if head and rest.strip():
+        return head + "\n\n" + rest.lstrip("\n")
+    if head:
+        return head + "\n"
+    return rest.lstrip("\n")
+
+
+def update_gitignore(
+    target: Path,
+    repo_root: Path,
+    rels: list[Path],
+    snapshot: dict[Path, bool],
+    dry_run: bool,
+    summary: list[str],
+) -> None:
+    """Add deployed scaffolding paths to the repo-root `.gitignore` inside a managed
+    block. A path is skipped when git already tracked it before this deploy — the
+    project version-controls it on purpose, so it stays visible."""
+    to_ignore: list[str] = []
+    for rel in rels:
+        if snapshot.get(rel, False):  # already git-tracked → leave it alone
+            continue
+        abs_path = (target / rel).resolve()
+        try:
+            pattern = "/" + abs_path.relative_to(repo_root).as_posix()
+        except ValueError:
+            continue
+        to_ignore.append(pattern)
+    to_ignore = sorted(set(to_ignore))
+
+    gitignore_path = repo_root / ".gitignore"
+    original = read_text(gitignore_path) if gitignore_path.exists() else ""
+    stripped = _strip_managed_block(original)
+
+    if to_ignore:
+        block = "\n".join([GITIGNORE_BEGIN, *to_ignore, GITIGNORE_END]) + "\n"
+        base = stripped.rstrip("\n")
+        new_text = (base + "\n\n" if base else "") + block
+    else:
+        new_text = stripped if stripped.strip() else ""
+
+    if normalize_text_for_compare(new_text) == normalize_text_for_compare(original):
+        summary.append(f"  {'GITIGNORE OK':<35} .gitignore")
+        return
+
+    label = "GITIGNORE" if to_ignore else "GITIGNORE (cleared block)"
+    detail = f" (+{len(to_ignore)} managed entries)" if to_ignore else ""
+    summary.append(f"  {label:<35} .gitignore{detail}")
+    if not dry_run:
+        write_text(gitignore_path, new_text)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Deploy coding agents into a target project.")
     ap.add_argument("--target", required=True, help="Target project path.")
@@ -911,6 +1031,8 @@ def main() -> int:
                     help="Prompt for merge conflicts and template-promotion decisions.")
     ap.add_argument("--skip-plan", action="store_true",
                     help="Do not create or repair the detected implementation plan.")
+    ap.add_argument("--no-gitignore", action="store_true",
+                    help="Do not add deployed agent scaffolding to the repo .gitignore.")
     args = ap.parse_args()
 
     target = Path(args.target).resolve()
@@ -939,6 +1061,17 @@ def main() -> int:
 
     summary: list[str] = []
     rendered_rels: set[Path] = set()
+
+    # Snapshot git state BEFORE any files are written so we can tell which deployed
+    # paths are pre-existing tracked project files vs. new scaffolding.
+    repo_root: Path | None = None
+    gi_rels: list[Path] = []
+    gi_snapshot: dict[Path, bool] = {}
+    if not args.no_gitignore:
+        repo_root = git_repo_root(target)
+        if repo_root is not None:
+            gi_rels = gitignore_candidate_rels(skill_root, args.role)
+            gi_snapshot = snapshot_gitignore_state(target, repo_root, gi_rels)
 
     deploy_tree(skill_root / "templates" / "common", target, subs,
                 args.dry_run, args.no_backup, args.merge_existing,
@@ -969,6 +1102,13 @@ def main() -> int:
 
     if not args.skip_plan:
         ensure_plan_file(target, info, args.dry_run, args.no_backup, summary)
+
+    if not args.no_gitignore:
+        if repo_root is None:
+            summary.append(f"  {'GITIGNORE SKIPPED (not a git repo)':<35} {target}")
+        else:
+            update_gitignore(target, repo_root, gi_rels, gi_snapshot,
+                             args.dry_run, summary)
 
     print("File operations:")
     if summary:

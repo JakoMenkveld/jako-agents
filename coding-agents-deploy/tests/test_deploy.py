@@ -178,5 +178,67 @@ class PlanRepairTests(unittest.TestCase):
         self.assertIn("Added ### Acceptance Criteria under Phase 1", changes)
 
 
+class GitignoreTests(unittest.TestCase):
+    @staticmethod
+    def _git(repo: Path, *args: str) -> None:
+        import subprocess
+        subprocess.run(["git", "-C", str(repo), *args], check=True,
+                        capture_output=True, text=True)
+
+    def _repo(self, tmp: str) -> Path:
+        repo = Path(tmp)
+        self._git(repo, "init")
+        self._git(repo, "config", "user.email", "t@t")
+        self._git(repo, "config", "user.name", "t")
+        return repo
+
+    def test_new_scaffolding_is_ignored_tracked_files_are_not(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._repo(tmp)
+            (repo / "AGENTS.md").write_text("# pre-existing\n", encoding="utf-8")
+            self._git(repo, "add", "AGENTS.md")
+            self._git(repo, "commit", "-m", "init")
+
+            rels = [Path("AGENTS.md"), Path("CLAUDE.md"),
+                    Path(".claude/agents/review-iterate.md")]
+            snapshot = deploy.snapshot_gitignore_state(repo, repo, rels)
+            (repo / "CLAUDE.md").write_text("x\n", encoding="utf-8")
+            (repo / ".claude/agents").mkdir(parents=True)
+            (repo / ".claude/agents/review-iterate.md").write_text("x\n", encoding="utf-8")
+
+            summary: list[str] = []
+            deploy.update_gitignore(repo, repo, rels, snapshot,
+                                    dry_run=False, summary=summary)
+            gi = (repo / ".gitignore").read_text(encoding="utf-8")
+
+            self.assertNotIn("/AGENTS.md", gi)            # tracked → stays visible
+            self.assertIn("/CLAUDE.md", gi)               # new scaffolding → ignored
+            self.assertIn("/.claude/agents/review-iterate.md", gi)
+            self.assertIn(deploy.GITIGNORE_BEGIN, gi)
+
+    def test_managed_block_is_idempotent_and_self_healing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = self._repo(tmp)
+            rels = [Path(".claude/commands/implement-phase.md")]
+            snap = deploy.snapshot_gitignore_state(repo, repo, rels)
+
+            s1: list[str] = []
+            deploy.update_gitignore(repo, repo, rels, snap, False, s1)
+            first = (repo / ".gitignore").read_text(encoding="utf-8")
+
+            s2: list[str] = []
+            deploy.update_gitignore(repo, repo, rels, snap, False, s2)
+            self.assertEqual(first, (repo / ".gitignore").read_text(encoding="utf-8"))
+            self.assertTrue(any("GITIGNORE OK" in line for line in s2))
+
+            # User wipes the managed block; a later deploy must restore it.
+            (repo / ".gitignore").write_text("node_modules/\n", encoding="utf-8")
+            s3: list[str] = []
+            deploy.update_gitignore(repo, repo, rels, snap, False, s3)
+            healed = (repo / ".gitignore").read_text(encoding="utf-8")
+            self.assertIn("node_modules/", healed)
+            self.assertIn("/.claude/commands/implement-phase.md", healed)
+
+
 if __name__ == "__main__":
     unittest.main()

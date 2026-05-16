@@ -1,6 +1,6 @@
 ---
 name: review-implementation
-description: Review one or more {{project_name}} implementation phases end-to-end against {{plan_path}} and the current codebase. Update phase status markers truthfully, commit the review locally, and report remaining actionable work. Use when invoked as `/review-implementation` with optional phase numbers or a range.
+description: Review one or more {{project_name}} implementation phases end-to-end against {{plan_path}} and the current codebase. Truthfully update the whole status surface — phase headings, Work/Acceptance bullets, task checkboxes, the Phase Status table, per-phase Status lines, and the Phase Flow Mermaid graph (node labels and class lines) — then commit the review locally and report remaining actionable work. Use when invoked as `/review-implementation` with optional phase numbers or a range.
 ---
 
 # Review Implementation
@@ -11,11 +11,17 @@ Review one or more {{project_name}} implementation phases end to end, update `{{
 
 `{{plan_path}}` is writable for THIS command, but the scope is narrow.
 
-**Allowed edits:**
-- Status markers (`✅`, `⚠️`, `⚠`) on phase headings, `### Work` bullets, `### Acceptance Criteria` bullets, `## Phase Flow` nodes and edge labels, and `## Recommended Execution Order` entries.
+**Allowed edits — the full status surface of every reviewed phase:**
+- Status markers on the phase heading, `### Work` bullets, `### Acceptance Criteria` bullets, and `## Recommended Execution Order` entries.
+- The `## Phase Flow` Mermaid graph — **both** the status icon embedded in the node label (e.g. `P3[Phase 3: … ⬜]` → `… ✅`) **and** the matching classification line (e.g. `class P3 pending` → `class P3 done`). Keep the node label, the `class` line, and the diagram's own `classDef` names consistent with each other. Also update edge labels.
+- A `## Phase Status` table (or any phase status/summary table): the Status cell of each reviewed phase's row.
+- A per-phase `Status:` line directly beneath the phase heading.
+- Task/checklist checkboxes (`- [ ]` → `- [x]`) and `## Files to Create` / file-inventory bullets for the reviewed phase — flip an individual item only when that specific item is verified complete in code.
 - Concise partial-reason notes inside the bracketed marker: `⚠️ [partial: SetMeasures fixed but tests pending]`.
 - `## Open Questions`: **append-only**. Add new questions to the bottom of the numbered list. Do NOT edit, renumber, resolve, mark, remove, or move existing entries — the user resolves Open Questions manually.
 - `## Residual Risks`: add new items raised during the review, remove risks resolved by shipped code, re-word risks whose blast radius changed.
+
+**Use the plan's own status vocabulary.** If the plan declares a legend — a `Legend:` line, a status-table legend, or Mermaid `classDef` names like `done`/`inProgress`/`pending`/`blocked` — match it exactly (icons *and* class names; e.g. `🟡 in-progress` and `class P1 inProgress`, not `⚠️`). Only when the plan declares no vocabulary, default to `✅` complete / `⚠️ [partial: reason]` / unmarked. Every surface above must end the review agreeing with every other surface and with the code.
 
 **Disallowed edits:**
 - Adding new phase sections, renaming phases, rewriting acceptance-criteria text, moving text between phases, or changing any non-marker plan content.
@@ -54,11 +60,13 @@ When supporting docs are stale but the implementation is correct, treat it as a 
 
 4. **Apply the review checklist (below).** Prioritize bugs, race conditions, data loss, incorrect behavior, schema/contract drift, missing production wiring, and missing tests.
 
-5. **Update `{{plan_path}}` markers** before final reporting:
-   - For each reviewed phase, mark `### Work` bullets `✅` only when the change exists and is correct. Use `⚠️ [partial: reason]` for partial items. Leave unimplemented items unmarked.
-   - For each reviewed phase, mark `### Acceptance Criteria` bullets `✅` only when met and verifiable now. Use `⚠️ [partial: reason]` for partial coverage.
-   - Mark the phase heading `✅` only when every `### Work` and `### Acceptance Criteria` bullet for that phase is `✅`. Use `⚠️` when any reviewed bullet is partial.
-   - In `## Phase Flow`, mark the phase node `✅` when the heading is `✅`, `⚠️` when partial. When a phase heading is `✅`, also mark every inbound/outbound edge whose connected nodes are both `✅`.
+5. **Update the full status surface in `{{plan_path}}`** before final reporting (use the plan's own legend — see Plan Write Policy):
+   - For each reviewed phase, mark `### Work` bullets done only when the change exists and is correct. Use the partial marker for partial items. Leave unimplemented items unmarked.
+   - For each reviewed phase, mark `### Acceptance Criteria` bullets done only when met and verifiable now; partial marker for partial coverage.
+   - Flip task/checklist checkboxes (`- [ ]` → `- [x]`) and `## Files to Create` / file-inventory bullets only for items individually verified complete.
+   - Mark the phase heading and any per-phase `Status:` line done only when every `### Work` bullet, `### Acceptance Criteria` bullet, and tracked checkbox/file for that phase is done. Use the partial/in-progress marker otherwise.
+   - Update the `## Phase Status` table (or any status/summary table): set each reviewed phase's Status cell to match its heading.
+   - In the `## Phase Flow` Mermaid graph, update **both** the icon in the phase's node label **and** its `class <node> <className>` line so they agree (e.g. heading done → `… ✅` in the label and `class P3 done`). When a phase is fully done, also update every inbound/outbound edge whose connected nodes are both done.
    - In `## Recommended Execution Order`, apply the same markers to numbered entries.
    - Apply the same markers to every other reference to the reviewed phase elsewhere in the plan.
    - Walk `## Open Questions` (append-only) and `## Residual Risks` (add/remove/reword) per the policy above.
@@ -67,7 +75,7 @@ When supporting docs are stale but the implementation is correct, treat it as a 
 
 7. **Re-read edited sections** to ensure the plan says what the code actually does.
 
-8. **Commit locally.** Inspect `git status --short`, stage only review-related files (normally just `{{plan_path}}` plus any supporting-doc edits made during the review), leave unrelated changes unstaged. Concise message: `Review implementation phase N` for one phase, `Review implementation phases N-M` for a range. No co-author trailer. Do not push.
+8. **Commit locally — always, whenever the plan changed.** This command owns the plan's status surface; if step 5 edited the plan it must end in a local commit. Inspect `git status --short`, stage only review-related files (normally just `{{plan_path}}` plus any supporting-doc edits made during the review — this includes the Mermaid graph, status table, per-phase `Status:` lines, and checkbox flips, all in `{{plan_path}}`), leave unrelated implementation changes unstaged. Concise message: `Review implementation phase N` for one phase, `Review implementation phases N-M` for a range. No co-author trailer. Do not push. Only skip the commit when the review made zero plan edits (see Completion Rules — no empty commits).
 
 ## Review Checklist
 
@@ -85,7 +93,7 @@ Use selectively but explicitly; skip items only when irrelevant to the phase.
 
 If findings remain for a reviewed phase, do not mark the phase heading `✅`. Mark implemented bullets `✅`, partial bullets `⚠️ [partial: reason]`, leave missing items unmarked, and mark the phase heading `⚠️`.
 
-If no findings remain, mark every `### Work` bullet, every `### Acceptance Criteria` bullet, the phase heading, the matching `## Phase Flow` node, and the matching `## Recommended Execution Order` entry `✅`. Confirm no other reference to that phase still implies it is incomplete.
+If no findings remain, mark the whole surface done in the plan's legend: every `### Work` bullet, every `### Acceptance Criteria` bullet, every tracked checkbox (`- [x]`) and file-inventory bullet, the phase heading, the per-phase `Status:` line, the `## Phase Status` table row, the `## Phase Flow` node label **and** its `class` line, and the matching `## Recommended Execution Order` entry. Confirm no other reference to that phase still implies it is incomplete.
 
 When no phases require review, leave the plan untouched and do not create an empty commit.
 
