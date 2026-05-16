@@ -19,7 +19,12 @@ Do not invent acceptance criteria the plan doesn't list, and do not bundle multi
 {{test_cmd}}
 ```
 
-Build must be clean (zero new errors, zero new warnings introduced by the diff) before a phase can be claimed complete. Tests must be green.
+**Division of labour — read this before running anything.**
+
+- **Implementers** (`implement-phase`, `implement-fixes`) run **only the build** (`{{build_cmd}}`). Iterate build → fix until clean. Implementers do **NOT** run the test suite — delegate that by spawning the `review-iterate` agent.
+- **Reviewers** (`review-iterate`, `review-implementation`) run **both** `{{build_cmd}}` and `{{test_cmd}}`. They own test verification.
+
+Running the test suite from an implementer is wasted work — it re-runs on every reviewer pass anyway. A phase is complete only after the build is clean *and* the reviewer has run the tests green; the implementer is responsible for the former, the reviewer for the latter.
 
 ## Conventions
 

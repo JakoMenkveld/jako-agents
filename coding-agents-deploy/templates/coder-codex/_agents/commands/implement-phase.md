@@ -41,7 +41,7 @@ Do NOT modify `{{plan_path}}` or related plan/data-model docs. The user owns pla
 {{build_cmd}}
 ```
 
-Iterate build → fix until clean. Do NOT run tests at this stage.
+Iterate build → fix until clean. Do NOT run tests at this stage — the `review-iterate` agent is responsible for testing.
 
 ### 5. Spawn the reviewer
 
@@ -53,7 +53,7 @@ Spawn the `review-iterate` agent (`.agents/agents/review-iterate.md`) with:
 
 Three categories:
 
-**Code findings**: fix BLOCKER/MAJOR always; fix MINOR unless they conflict with the architecture. Rebuild after each batch.
+**Code findings**: fix BLOCKER/MAJOR always; fix MINOR unless they conflict with the architecture. Rebuild after each batch. Do NOT run tests — the reviewer will.
 **`[DOC]` findings**: relay to user verbatim, do not edit docs. Filter out any `[ ]`/`[x]` or `✅` bookkeeping.
 **`[SHARED]` findings**: collect for a separate shared-library suggestions file (path from the user; ask if unspecified).
 

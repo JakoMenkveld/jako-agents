@@ -37,7 +37,7 @@ Do NOT modify `{{plan_path}}` or related plan/data-model docs.
 {{build_cmd}}
 ```
 
-Iterate build → fix until clean. Do NOT run tests.
+Iterate build → fix until clean. Do NOT run tests — that's the reviewer's job.
 
 ### 5. Spawn the reviewer
 

@@ -174,6 +174,7 @@ The deployed workflows share these rules:
 - Implementation loops have a three-cycle reviewer iteration cap.
 - Repeated feedback for the same `file:line` is treated as priority work before unrelated cleanup.
 - `git diff --check` is a standard verification step.
+- Implementers run only the build (`{{build_cmd}}`); the test suite (`{{test_cmd}}`) is run exclusively by the reviewers (`review-iterate`, `review-implementation`). Implementers delegate testing by spawning `review-iterate` rather than running tests themselves — this avoids redundant suite runs on every implementer pass.
 - Passing tests are necessary but not sufficient; reviewers check that tests prove the relevant acceptance criteria.
 - Generic agents do not edit plan status markers. `review-implementation` is the explicit exception and may update markers under its plan write policy.
 - `archive-plan` (reviewer lane) is the only operation that retires a plan: it refuses to run while any task is outstanding, moves the completed plan into a dated `archive/` file, and writes a fresh task-free plan carrying forward only durable context. The new plan contains no status markers.
