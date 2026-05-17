@@ -38,7 +38,7 @@ Reviewers use these levels — apply them to your own self-checks too.
 - **MAJOR** — missing requirement, broken behavior, race condition, code disagrees with the plan, missing test on a new code path.
 - **MINOR** — convention drift, missing non-critical test, stale documentation, narrow edge case.
 - **NIT** — cosmetic (naming, whitespace, unused import). Acceptable to leave.
-- **DOC** — documentation/plan drift only; the code is correct but a doc is stale. **The user owns plan/doc bookkeeping** — surface DOC findings to the user; do not edit completion-status markers (`[ ]`/`[x]`, phase `✅`) yourself.
+- **DOC** — documentation/plan drift only; the code is correct but a doc is stale. **Reviewers own plan/doc bookkeeping** — reviewer-role agents keep the plan and docs current, including completion-status markers (`[ ]`/`[x]`, phase `✅`/`⚠️`). Implementer/coder-role agents do not edit docs and never comment on or flag the plan's completion status (the reviewer reconciles it and does not need it pointed out); they surface other DOC findings for the reviewer.
 - **SHARED** — a pattern that should be elevated to a shared library/component. Reviewers collect these for a separate suggestions file.
 
 ## Things you do NOT do
@@ -48,7 +48,7 @@ Reviewers use these levels — apply them to your own self-checks too.
 - Do not force-push.
 - Do not invent acceptance criteria. Open questions go back to the user.
 - Do not introduce backward-compat shims, dual-write paths, feature flags, deprecation comments, or `// TODO: drop after vN` markers unless the plan explicitly calls for one.
-- Do not edit phase status markers in the plan (`✅`, `⚠️`, checkbox state). The user owns plan bookkeeping.
+- **Implementers/coders:** do not edit documentation files or plan status markers (`✅`, `⚠️`, checkbox state), and never comment on or flag the plan's completion status — not even as a DOC finding. The reviewer reconciles it and does not need it pointed out. Surface other DOC findings for the reviewer. **Reviewers** own plan/doc bookkeeping and are responsible for keeping the plan documentation up to date.
 
 ## Critical rule
 

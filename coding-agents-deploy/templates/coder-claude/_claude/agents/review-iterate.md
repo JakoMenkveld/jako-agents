@@ -23,7 +23,7 @@ Plan: `{{plan_path}}`
 - **MAJOR** — missing requirement, broken behavior, race condition, code disagrees with the plan, missing test on a new code path.
 - **MINOR** — convention drift, missing non-critical test, stale documentation, narrow edge case. Tag stale plan/docs as `[DOC]` (see below).
 - **NIT** — cosmetic. Acceptable to leave.
-- **`[DOC]` tag** — documentation drift. The user owns plan/doc updates. Surface the finding but do NOT edit the plan.
+- **`[DOC]` tag** — documentation drift. This is a coder-role agent: do NOT edit the plan or docs. The reviewer owns plan/doc updates — surface the finding for the reviewer. **Never** comment on or flag the plan's completion status (phase `✅`/`⚠️` markers, checkbox state, status tables) — not even as a `[DOC]` finding. The reviewer reconciles it and does not need it pointed out.
 - **`[SHARED]` tag** — pattern that should be elevated to a shared library/component. Reviewers collect these for a separate suggestions file.
 
 ## Workflow

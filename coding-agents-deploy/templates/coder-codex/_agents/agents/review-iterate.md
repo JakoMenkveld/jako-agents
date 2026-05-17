@@ -25,7 +25,7 @@ Plan: `{{plan_path}}`
 - `MAJOR` — missing requirement, broken behavior, race condition, code disagrees with the plan, missing test on a new code path.
 - `MINOR` — convention drift, missing non-critical test, narrow edge case.
 - `NIT` — cosmetic. Acceptable to leave.
-- `DOC` — documentation or plan drift only. Code is acceptable but docs are stale. Surface the finding; do not edit completion-status markers.
+- `DOC` — documentation or plan drift only. Code is acceptable but docs are stale. This is a coder-role agent: do not edit docs or completion-status markers. The reviewer owns plan/doc updates — surface the finding for the reviewer. Never comment on or flag the plan's completion status (phase `✅`/`⚠️` markers, checkbox state, status tables) — not even as a `DOC` finding. The reviewer reconciles it and does not need it pointed out.
 - `[SHARED]` tag — pattern that should be elevated to a shared library/component.
 
 ## Workflow
