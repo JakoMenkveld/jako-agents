@@ -9,6 +9,10 @@ Take a user-provided list of findings, implement the fixes, spawn the `review-it
 
 ## Steps
 
+### 0. First-run check
+
+Before anything else, do the **First-run self-configuration** in `AGENTS.md`: if any `<add …>` / `Unknown stack` / generic-fallback deploy placeholders remain, fill them from the actual repo (this file's commands, `.claude/settings.json`, and the `review-iterate` agent), report a one-line summary, then continue. Skip once the placeholders are gone.
+
 ### 1. Parse findings
 
 Read the findings carefully. If they reference specific files, read those first. If they reference phases in `{{plan_path}}`, read the relevant sections.
@@ -29,6 +33,8 @@ Run `git fetch origin && git status --short --untracked-files=all`. Untracked fi
 
 Work systematically through each finding. Follow project conventions in `AGENTS.md`. Do not exceed the scope of the findings.
 
+**Apply every finding in full before you build or call the reviewer.** Finish the entire findings list — no partial passes, no building or spawning the reviewer with some findings still unaddressed. Before leaving this step, walk the findings list item by item and confirm each is actually resolved in the code. The build and the reviewer are gates on the *complete* fix set, not a progress check on a partial one — a partial pass just burns a build/review cycle.
+
 Do NOT modify `{{plan_path}}` or related plan/data-model docs.
 
 ### 4. Build
@@ -37,13 +43,15 @@ Do NOT modify `{{plan_path}}` or related plan/data-model docs.
 {{build_cmd}}
 ```
 
-Iterate build → fix until clean. Do NOT run tests — that's the reviewer's job.
+Reach this step only once every finding is applied (step 3 gate). Iterate build → fix until clean. Do NOT run tests — that's the reviewer's job.
 
 ### 5. Spawn the reviewer
 
 Spawn `review-iterate` (`.agents/agents/review-iterate.md`):
 
-> Review the implementation after applying these fixes: [list]. Check each fix is implemented, no regressions were introduced, and the code still satisfies `{{plan_path}}`. Report findings as BLOCKER / MAJOR / MINOR / NIT. Do NOT implement fixes.
+> Independently verify whether each of the following findings is fully resolved in the code, that no regression was introduced, and that the code still satisfies `{{plan_path}}`: [paste the findings list from step 1 verbatim]. Do NOT assume any of them were addressed — check each against the actual code yourself. Report findings as BLOCKER / MAJOR / MINOR / NIT. Do NOT implement fixes.
+
+Hand the reviewer the original findings list to verify against — not an account of what you did. Do NOT describe or summarize the changes you made; the reviewer judges each finding against the plan and the code from scratch.
 
 ### 6. Iterate
 
@@ -51,7 +59,7 @@ Same three-category protocol as `implement-phase`.
 
 **Repeated-feedback discipline**: if the reviewer reports the same finding across two cycles, address the exact `file:line` they cited before doing any other work.
 
-**Cycle cap: 3 implementer cycles.** After 3 rounds without approval, stop and surface.
+**Cycle cap: 10 implementer cycles.** After 10 rounds without approval, stop and surface.
 
 ### 7. Commit locally
 

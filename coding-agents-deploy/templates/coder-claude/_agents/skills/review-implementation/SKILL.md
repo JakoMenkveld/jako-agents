@@ -62,6 +62,8 @@ When supporting docs are stale but the implementation is correct, treat it as a 
 
 ## Workflow
 
+0. **First-run check.** Before anything else, do the **First-run self-configuration** in `AGENTS.md`: if any `<add …>` / `Unknown stack` / generic-fallback deploy placeholders remain, fill them from the actual repo (`AGENTS.md`, `.claude/settings.json`, the `review-iterate` agent), report a one-line summary, then continue. Skip once the placeholders are gone.
+
 1. **Survey state — including untracked files.** Run `git status --short --untracked-files=all`, `git diff --check`, and `git ls-files --others --exclude-standard`. **Untracked files are part of the review surface** — do not approve if relevant implementation files are untracked and you didn't inspect them. Read the selected phase(s) in `{{plan_path}}`, including each phase's `### Work` and `### Acceptance Criteria`, plus surrounding `## Phase Flow`, `## Recommended Execution Order`, `## Open Questions`, and `## Residual Risks`. Read supporting docs in the repo when they overlap the reviewed phases.
 
 2. **Inspect the diff.** If the phase work is committed, use `git diff --stat HEAD~1..HEAD`; otherwise `git diff --stat`. Note files outside the phase's plausible scope as possible scope creep.
@@ -109,11 +111,13 @@ When no phases require review, leave the plan untouched and do not create an emp
 
 ## Final Response
 
-Return one plain-text paragraph describing only what is still outstanding for the reviewed phase(s). Mention each outstanding item inline by phase number with the concrete file, test, command, or behavior that needs to change. When you auto-detected the phase(s) because no explicit selector was given, begin the response with a single short clause naming the phase(s) reviewed and why (e.g. `Auto-detected in-progress Phase 4; ` or `No phase in-progress, fell back to Phase 7; `) and then continue with the outstanding-work paragraph or the exact no-outstanding sentence below. Convert every remaining `⚠️ [partial: reason]` marker into a concrete next action inside the same paragraph. If you appended an Open Question during this review and it needs the user's attention, mention it in the same paragraph as `Open Question: ...`.
+The Final Response is **always two parts**, in this order, separated by a blank line. Part 2 is always present, even when nothing is outstanding.
 
-Do not include headings, bullet lists, task-list syntax, code fences, severity labels, review narrative, verification history, documentation summaries, or any list of unchanged areas. Do not end with an offer or a summary sentence.
+**Part 1 — Review summary (one paragraph).** Return one plain-text paragraph describing only what is still outstanding for the reviewed phase(s). Mention each outstanding item inline by phase number with the concrete file, test, command, or behavior that needs to change. When you auto-detected the phase(s) because no explicit selector was given, begin the response with a single short clause naming the phase(s) reviewed and why (e.g. `Auto-detected in-progress Phase 4; ` or `No phase in-progress, fell back to Phase 7; `) and then continue with the outstanding-work paragraph or the exact no-outstanding sentence below. Convert every remaining `⚠️ [partial: reason]` marker into a concrete next action inside the same paragraph. If you appended an Open Question during this review and it needs the user's attention, mention it in the same paragraph as `Open Question: ...`. Do not include headings, bullet lists, task-list syntax, code fences, severity labels, review narrative, verification history, documentation summaries, or any list of unchanged areas. Do not end with an offer or a summary sentence.
 
-If nothing is outstanding, return exactly:
+If nothing is outstanding, Part 1 is exactly one of:
 - `No outstanding items for phase N.` (single phase)
 - `No outstanding items for phases N-M.` (contiguous range)
 - `No outstanding items for phases N, M, and P.` (non-contiguous list)
+
+**Part 2 — Coder instructions (separate paragraph, always present).** After a blank line, add a paragraph addressed to the implementer/coder that states **only the code changes to make**: the files to edit, the behavior to implement, and the test(s) to add or update so the acceptance criteria and contract are met. State nothing else. Do NOT tell the coder to run the build, to iterate, to not edit the plan/docs/status markers, or any other process or prohibition — the coder already knows its own workflow and constraints. No meta-instructions, no "do not", no verification or commit guidance. Make it directly actionable so the coder can act without re-deriving the findings. Begin this paragraph with `Coder instructions: `. When Part 1 is a `No outstanding items` sentence, Part 2 is exactly `Coder instructions: Nothing to fix.`

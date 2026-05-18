@@ -2,6 +2,19 @@
 
 Persistent instructions for coding agents (Claude, Codex, Copilot, etc.) working in this repository. This file is the single source of truth; `CLAUDE.md` inherits from it via `@AGENTS.md`.
 
+## First-run self-configuration
+
+Before doing anything else on your first run in this repository, check whether this file and the agent configs still contain unfilled deploy placeholders, and fix them in place if so. Treat any of the following as unfilled:
+
+- `## Project` reads `Unknown stack` or is empty.
+- The build or test command is `<add build command>` / `<add test command>` — anywhere it appears: here under `## Build & test`, in the `## Conventions`/division-of-labour text, in `.claude/settings.json` permission entries, and in the `review-iterate` agent file.
+- `## Conventions` contains only the generic-fallback note ("this is a generic fallback").
+- Any other `<add …>` sentinel (e.g. `<add sln name>`).
+
+When you find unfilled placeholders: detect the real stack from the repo (`package.json` scripts, `*.csproj`/`*.sln`, `pyproject.toml`, `go.mod`, Makefile, etc.), then edit, in this order, (1) `AGENTS.md` — `## Project`, `## Build & test`, `## Conventions`; (2) the harness settings file `.claude/settings.json` — replace the `<add build command>` / `<add test command>` Bash allow entries with the real commands; (3) the `review-iterate` agent file — its stack summary, build command, test command, and conventions lines. Keep the build and test commands byte-identical across all three. Report a one-line summary of what you filled in, then continue with the original task. If the stack genuinely cannot be determined, ask the user once instead of guessing.
+
+This is a one-time repair: once the placeholders are gone, skip this section.
+
 ## Project
 
 {{stack_summary}}

@@ -13,6 +13,10 @@ When implementing multiple phases, implement them all before building, testing, 
 
 ## Steps
 
+### 0. First-run check
+
+Before anything else, do the **First-run self-configuration** in `AGENTS.md`: if any `<add …>` / `Unknown stack` / generic-fallback deploy placeholders remain, fill them from the actual repo (this file's commands, `.claude/settings.json`, and the `review-iterate` agent), report a one-line summary, then continue. Skip once the placeholders are gone.
+
 ### 1. Determine which phases to implement
 
 Parse `$ARGUMENTS` for phase numbers. If provided (e.g. `19` or `19 20 21`), split on spaces and/or commas. If no arguments are provided, read `{{plan_path}}` and auto-detect the target phase in this order: (1) the lowest-numbered phase marked in-progress (a `⚠️`/`⚠` marker on its heading) — carry its unfinished work to completion before starting anything new; (2) if none is in-progress, the lowest-numbered phase with no `✅` completion marker; (3) never auto-select a phase the plan flags as blocked or gated on unresolved open questions — if such a phase is the only candidate or is explicitly named, surface it and stop (clearing the block is the user's).
@@ -35,6 +39,8 @@ Run `git fetch origin && git status --short --untracked-files=all` and report wh
 
 Implement every artifact listed under each target phase. Follow the project conventions in `AGENTS.md` and {{plan_path}}. Reuse existing helpers before introducing new ones — grep first.
 
+**Implement the phase in full before you build or call the reviewer.** Every artifact, file, and task the phase calls out must be written and wired — no partial passes, no "build now and finish the rest after the review". Before leaving this step, re-read the phase and walk its `### Work`, `### Acceptance Criteria`, and file list against what you actually wrote; if any item is unwritten, stubbed where the plan expects an implementation, or only half-done, finish it now. The build and the reviewer are gates on a *complete* phase, not a progress check on a partial one — a partial pass just burns a build/review cycle.
+
 Do NOT implement files from phases beyond those specified. Stubs that the plan says will be wired in a later phase remain stubs (constructor + minimal body, throw `NotImplementedException` if needed).
 
 Do NOT modify `{{plan_path}}` or any other plan/data-model docs. The user owns plan bookkeeping. The reviewer may report documentation staleness as `[DOC]` findings — relay those to the user verbatim at the end.
@@ -45,13 +51,15 @@ Do NOT modify `{{plan_path}}` or any other plan/data-model docs. The user owns p
 {{build_cmd}}
 ```
 
-Fix every compilation error before proceeding. Iterate build → fix until clean. Do NOT run tests at this stage — the review-iterate agent is responsible for testing.
+Reach this step only once the phase is fully implemented (step 3 gate). Fix every compilation error before proceeding. Iterate build → fix until clean. Do NOT run tests at this stage — the review-iterate agent is responsible for testing.
 
 ### 5. Spawn the reviewer (read-only audit)
 
 Spawn the `review-iterate` agent (`.claude/agents/review-iterate.md`). Use this prompt:
 
-> Review the Phase N[, Phase M, …] implementation for completeness and correctness against `{{plan_path}}`. Check all items in your review checklist. Report findings as BLOCKER / MAJOR / MINOR / NIT. Do NOT implement fixes — just report what's wrong.
+> Independently review Phase N[, Phase M, …] against `{{plan_path}}` and the code on disk. Do NOT assume anything is implemented — verify each `### Work` and `### Acceptance Criteria` item against the actual code yourself, checking all items in your review checklist. Report findings as BLOCKER / MAJOR / MINOR / NIT. Do NOT implement fixes — just report what's wrong.
+
+Hand the reviewer only the phase number(s). Do NOT describe, summarize, or list what you changed — the reviewer audits the plan and the code from scratch and must not be primed by your account of the work.
 
 ### 6. Implement review findings yourself
 
@@ -81,7 +89,7 @@ Repeat steps 6–7 (you fix code, reviewer audits) until the reviewer returns ze
 
 **Repeated-feedback discipline**: if the reviewer reports the same finding across two cycles, address the exact `file:line` they cited before doing any other work. Don't add adjacent fixes — fix the specific thing first, rebuild, then re-spawn the reviewer.
 
-**Cycle cap: 3 implementer cycles.** If you've done 3 rounds without approval, stop and surface the situation to the user — don't grind indefinitely.
+**Cycle cap: 10 implementer cycles.** If you've done 10 rounds without approval, stop and surface the situation to the user — don't grind indefinitely.
 
 ### 8. Write shared-library suggestions (if any)
 

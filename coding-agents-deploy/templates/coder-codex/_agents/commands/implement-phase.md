@@ -11,6 +11,10 @@ Invoke as `implement-phase 19` (single), `implement-phase 19 20 21` (multi-phase
 
 ## Steps
 
+### 0. First-run check
+
+Before anything else, do the **First-run self-configuration** in `AGENTS.md`: if any `<add …>` / `Unknown stack` / generic-fallback deploy placeholders remain, fill them from the actual repo (this file's commands, `.claude/settings.json`, and the `review-iterate` agent), report a one-line summary, then continue. Skip once the placeholders are gone.
+
 ### 1. Determine phases
 
 Parse arguments for phase numbers. If none, read `{{plan_path}}` and auto-detect the target phase in this order: (1) the lowest-numbered phase marked in-progress (a `⚠️`/`⚠` marker on its heading) — carry its unfinished work to completion before starting anything new; (2) if none is in-progress, the lowest-numbered phase with no `✅` completion marker; (3) never auto-select a phase the plan flags as blocked or gated on unresolved open questions — if such a phase is the only candidate or is explicitly named, surface it and stop (clearing the block is the user's). Read each target phase's section in full, then reconcile the plan against disk: for each task or file the phase calls out, check whether it already exists and satisfies the plan, skip what is already complete, and implement only the outstanding remainder. Treat status bookkeeping only as a signal of intended scope, never edit it.
@@ -31,6 +35,8 @@ Run `git fetch origin && git status --short --untracked-files=all`. Untracked fi
 
 Implement every artifact under each target phase. Follow `AGENTS.md` and the plan. Reuse existing helpers before introducing new ones.
 
+**Implement the phase in full before you build or call the reviewer.** Every artifact, file, and task the phase calls out must be written and wired — no partial passes, no "build now and finish the rest after the review". Before leaving this step, re-read the phase and walk its `### Work`, `### Acceptance Criteria`, and file list against what you actually wrote; if any item is unwritten, stubbed where the plan expects an implementation, or only half-done, finish it now. The build and the reviewer are gates on a *complete* phase, not a progress check on a partial one — a partial pass just burns a build/review cycle.
+
 Do NOT implement files from phases beyond those specified. Stubs the plan defers to a later phase remain stubs.
 
 Do NOT modify `{{plan_path}}` or related plan/data-model docs. The user owns plan bookkeeping. The reviewer will surface staleness as `[DOC]` findings — relay them verbatim at the end.
@@ -41,13 +47,15 @@ Do NOT modify `{{plan_path}}` or related plan/data-model docs. The user owns pla
 {{build_cmd}}
 ```
 
-Iterate build → fix until clean. Do NOT run tests at this stage — the `review-iterate` agent is responsible for testing.
+Reach this step only once the phase is fully implemented (step 3 gate). Iterate build → fix until clean. Do NOT run tests at this stage — the `review-iterate` agent is responsible for testing.
 
 ### 5. Spawn the reviewer
 
 Spawn the `review-iterate` agent (`.agents/agents/review-iterate.md`) with:
 
-> Review the Phase N[, Phase M, …] implementation against `{{plan_path}}`. Report findings as BLOCKER / MAJOR / MINOR / NIT. Do NOT implement fixes.
+> Independently review Phase N[, Phase M, …] against `{{plan_path}}` and the code on disk. Do NOT assume anything is implemented — verify each `### Work` and `### Acceptance Criteria` item against the actual code yourself. Report findings as BLOCKER / MAJOR / MINOR / NIT. Do NOT implement fixes.
+
+Hand the reviewer only the phase number(s). Do NOT describe, summarize, or list what you changed — the reviewer audits the plan and the code from scratch and must not be primed by your account of the work.
 
 ### 6. Implement reviewer findings
 
@@ -63,7 +71,7 @@ Same prompt. Loop steps 6–7 until clean (zero BLOCKER/MAJOR/non-`[DOC]`-non-`[
 
 **Repeated-feedback discipline**: if the reviewer reports the same finding across two cycles, address the exact `file:line` they cited before doing any other work.
 
-**Cycle cap: 3 implementer cycles.** After 3 rounds without approval, stop and surface.
+**Cycle cap: 10 implementer cycles.** After 10 rounds without approval, stop and surface.
 
 ### 8. Commit locally
 
