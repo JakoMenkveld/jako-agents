@@ -22,7 +22,7 @@ SPEC.loader.exec_module(deploy)
 class MergeMarkdownTests(unittest.TestCase):
     def test_project_only_section_stays_near_original_neighbor(self) -> None:
         rendered_template = (
-            "# AGENTS.md - Alpha\n"
+            "# Coding-agent conventions - Alpha\n"
             "\n"
             "## Project\n"
             "Template project guidance.\n"
@@ -31,7 +31,7 @@ class MergeMarkdownTests(unittest.TestCase):
             "Template build guidance.\n"
         )
         existing = (
-            "# AGENTS.md - Alpha\n"
+            "# Coding-agent conventions - Alpha\n"
             "\n"
             "## Project\n"
             "Project-specific guidance.\n"
@@ -45,7 +45,7 @@ class MergeMarkdownTests(unittest.TestCase):
         summary: list[str] = []
 
         merged, template_update = deploy.merge_markdown(
-            Path("AGENTS.md"),
+            Path(".deployed-agents/conventions.md"),
             rendered_template,
             existing,
             interactive=False,
@@ -107,7 +107,7 @@ class MergeMarkdownTests(unittest.TestCase):
         summary: list[str] = []
 
         _merged, template_update = deploy.merge_markdown(
-            Path("AGENTS.md"),
+            Path(".deployed-agents/conventions.md"),
             rendered_template,
             existing,
             interactive=False,
@@ -117,7 +117,7 @@ class MergeMarkdownTests(unittest.TestCase):
 
         self.assertIsNotNone(template_update)
         with tempfile.TemporaryDirectory() as tmp:
-            src = Path(tmp) / "templates" / "common" / "AGENTS.md"
+            src = Path(tmp) / "templates" / "common" / "_deployed-agents" / "conventions.md"
             src.parent.mkdir(parents=True)
             src.write_text(template_text, encoding="utf-8")
             deploy.write_template_update(src, template_update, subs, dry_run=False, summary=summary)
@@ -195,14 +195,18 @@ class GitignoreTests(unittest.TestCase):
     def test_new_scaffolding_is_ignored_tracked_files_are_not(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = self._repo(tmp)
-            (repo / "AGENTS.md").write_text("# pre-existing\n", encoding="utf-8")
-            self._git(repo, "add", "AGENTS.md")
+            # A scaffolding file the project deliberately committed stays visible.
+            (repo / ".deployed-agents").mkdir(parents=True)
+            (repo / ".deployed-agents/conventions.md").write_text(
+                "# pre-existing\n", encoding="utf-8")
+            self._git(repo, "add", ".deployed-agents/conventions.md")
             self._git(repo, "commit", "-m", "init")
 
-            rels = [Path("AGENTS.md"), Path("CLAUDE.md"),
+            rels = [Path(".deployed-agents/conventions.md"),
+                    Path(".deployed-agents/suggestions.md"),
                     Path(".claude/agents/review-iterate.md")]
             snapshot = deploy.snapshot_gitignore_state(repo, repo, rels)
-            (repo / "CLAUDE.md").write_text("x\n", encoding="utf-8")
+            (repo / ".deployed-agents/suggestions.md").write_text("x\n", encoding="utf-8")
             (repo / ".claude/agents").mkdir(parents=True)
             (repo / ".claude/agents/review-iterate.md").write_text("x\n", encoding="utf-8")
 
@@ -211,8 +215,8 @@ class GitignoreTests(unittest.TestCase):
                                     dry_run=False, summary=summary)
             gi = (repo / ".gitignore").read_text(encoding="utf-8")
 
-            self.assertNotIn("/AGENTS.md", gi)            # tracked → stays visible
-            self.assertIn("/CLAUDE.md", gi)               # new scaffolding → ignored
+            self.assertNotIn("/.deployed-agents/conventions.md", gi)   # tracked → stays visible
+            self.assertIn("/.deployed-agents/suggestions.md", gi)      # new scaffolding → ignored
             self.assertIn("/.claude/agents/review-iterate.md", gi)
             self.assertIn(deploy.GITIGNORE_BEGIN, gi)
 

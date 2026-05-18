@@ -187,7 +187,7 @@ If `{{plan_path}}` already exists, switch to audit + auto-fix mode instead. Neve
 Ask the user (in a single bundled question if possible — Cowork's AskUserQuestion tool, or otherwise inline):
 
 - A one-paragraph summary of what's being built and why.
-- A rough list of phase titles (numbered from 0 or 1). The user may say "I don't know yet — propose some" — in that case, propose 3-5 plausible phases based on the project name and stack from `AGENTS.md`, then ask for sign-off.
+- A rough list of phase titles (numbered from 0 or 1). The user may say "I don't know yet — propose some" — in that case, propose 3-5 plausible phases based on the project name and stack from `.deployed-agents/conventions.md`, then ask for sign-off.
 
 Do NOT ask the user to fill in `### Work`, `### Acceptance Criteria`, `## Files to Create by Phase`, `## Test Plan`, `## Definition of Done`, or `## Automation Contract` content interactively — those go in as placeholders that the user fills in afterwards. The goal of create mode is to lay down a compliant skeleton, not to extract a detailed plan from the user in one shot.
 

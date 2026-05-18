@@ -1,6 +1,6 @@
 ---
 name: deploy-coding-agents
-description: Deploy a complete set of Claude + Codex coding-agent files into a target project. Use when the user says "deploy coding agents", "set up the coding agents", "deploy the agents to <project>", or names a role assignment like "Claude codes, Codex reviews" or "Codex codes, Claude reviews". Creates AGENTS.md, CLAUDE.md, .claude/, and .agents/ trees with project-specific build/test commands and conventions detected from the target's stack.
+description: Deploy a complete set of Claude + Codex coding-agent files into a target project. Use when the user says "deploy coding agents", "set up the coding agents", "deploy the agents to <project>", or names a role assignment like "Claude codes, Codex reviews" or "Codex codes, Claude reviews". Installs a non-invasive overlay — a gitignored .deployed-agents/ source-of-truth plus .claude/ and .agents/ trees — with project-specific build/test commands and conventions detected from the target's stack. It never writes or merges the project's own AGENTS.md / CLAUDE.md.
 ---
 
 # Deploy Coding Agents
@@ -15,7 +15,9 @@ You are deploying a coordinated Claude+Codex coding-agent setup into a target pr
 
 **The reviewer lane also gets `archive-plan`** (reviewer only, never the coder). It archives a fully-completed plan into a dated `archive/` file and starts a fresh, task-free plan that carries forward only durable context; it refuses to run while any task is outstanding and asks the user how to proceed.
 
-The deploy script is merge-aware. When a target project already has agent files, it preserves project-only content, asks about conflicts when interactive, and can promote useful project additions back into this skill's source templates before rendering the final project files.
+**This is a non-invasive overlay.** The deploy never writes, reads, backs up, or merges the project's own root-level `AGENTS.md` / `CLAUDE.md`. The single source of truth for the deployed agents is `.deployed-agents/conventions.md` (a gitignored dot-dir owned by this deploy); every deployed command and skill points there. Conventions are therefore workflow-scoped — they apply when a deployed command runs, not ambiently in a plain Claude/Codex session — by design, so the developer's own setup is untouched.
+
+The deploy script is merge-aware for its own scaffolding. When a target project already has *deployed* agent files (e.g. a prior `.deployed-agents/conventions.md` with filled-in self-config), it preserves project-only content, asks about conflicts when interactive, and can promote useful additions back into this skill's source templates before rendering the final files.
 
 ## Workflow
 
@@ -50,18 +52,18 @@ The deploy script:
    - Conflicting sections ask whether to keep the project version, use the template version, or append the project body to the template version.
    - Project-only sections/files and chosen project-side conflict resolutions can be promoted into `templates/` when the user agrees.
 4. Creates `{{plan_path}}` if it does not exist, or repairs missing canonical plan structure if it does. Existing plans are backed up before repair unless `--no-backup` is supplied.
-5. Adds the deployed agent scaffolding (`.claude/`, `.agents/`, `AGENTS.md`, `CLAUDE.md`) to the repo-root `.gitignore` in a managed block — but never a path git already tracks (the project version-controls it deliberately). `git add` a scaffolding file to opt it back into version control on the next deploy. Skipped by `--no-gitignore` or when the target isn't a git repo.
+5. Adds the deployed agent scaffolding (`.claude/`, `.agents/`, `.deployed-agents/`) to the repo-root `.gitignore` in a managed block — but never a path git already tracks (the project version-controls it deliberately). `git add` a scaffolding file to opt it back into version control on the next deploy. Skipped by `--no-gitignore` or when the target isn't a git repo.
 6. Prints a tree of what was created, merged, repaired, promoted, gitignored, or left unchanged.
 
 ### 5. Report to the user
 
-Tell the user what was deployed, which files were backed up (if any), whether any template files were updated from project ideas, and what manual steps remain (e.g., reviewing `AGENTS.md`, filling plan placeholders, deciding whether to commit). Suggest a `git status` so they can see the changes.
+Tell the user what was deployed, which files were backed up (if any), whether any template files were updated from project ideas, and what manual steps remain (e.g., reviewing `.deployed-agents/conventions.md`, filling plan placeholders, deciding whether to commit). Note explicitly that the project's own `AGENTS.md` / `CLAUDE.md` were not touched. Suggest a `git status` so they can see the changes.
 
 ## Important
 
 - **Template promotion is opt-in.** If the deploy script asks whether a project-only idea should update this skill's templates, treat that as a product decision. Promote only when the idea should apply to future projects, not when it is project-specific.
-- **Respect existing `AGENTS.md` / `CLAUDE.md`.** Use `--merge-existing` so project-specific sections survive. If a merge writes a changed file, the original is still backed up unless `--no-backup` is supplied.
+- **Never touch the project's `AGENTS.md` / `CLAUDE.md`.** This is an overlay: the deploy does not write, read, back up, or merge those files. The source of truth is the gitignored `.deployed-agents/conventions.md`. `--merge-existing` only merges the deploy's own scaffolding (e.g. preserving filled-in self-config in a prior `.deployed-agents/conventions.md` across redeploys).
 - **Plans are managed during deploy.** The script creates a starter plan when missing and repairs missing structural sections in an existing plan. Existing plan content, status markers, and `## Open Questions` entries must not be deleted.
-- **Scaffolding is gitignored by default.** Agent files (`.claude/`, `.agents/`, `AGENTS.md`, `CLAUDE.md`) go into a managed `.gitignore` block so they don't pollute the repo — except any path the project already git-tracks, which stays tracked. Tell the user this happened and that they can `git add` a scaffolding file to keep it under version control. The implementation plan is never gitignored.
-- **The detector is conservative.** If it can't identify the stack, it falls back to `conventions/generic.md`. The user can edit `AGENTS.md` afterwards to fill in specifics.
+- **Scaffolding is gitignored by default.** Agent files (`.claude/`, `.agents/`, `.deployed-agents/`) go into a managed `.gitignore` block so they don't pollute the repo — except any path the project already git-tracks, which stays tracked. Tell the user this happened and that they can `git add` a scaffolding file to keep it under version control. The implementation plan is never gitignored.
+- **The detector is conservative.** If it can't identify the stack, it falls back to `conventions/generic.md`. The user (or the first-run self-config) can edit `.deployed-agents/conventions.md` afterwards to fill in specifics.
 - **The skill is versioned in git** at `c:\vsprojects\jako-agents\coding-agents-deploy` (part of the [JakoMenkveld/jako-agents](https://github.com/JakoMenkveld/jako-agents) meta-repo for agentic work). Improvements to templates should be committed there.

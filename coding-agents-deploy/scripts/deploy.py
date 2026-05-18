@@ -42,7 +42,11 @@ PHASE_RE = re.compile(
     r"^##\s+Phase\s+(\d+)(?:\s*[:\-\u2013\u2014]\s*(.*?))?\s*$",
     re.IGNORECASE | re.MULTILINE,
 )
-MANAGED_TOP_LEVEL_FILES = {Path("AGENTS.md"), Path("CLAUDE.md")}
+# The overlay never writes root-level agent files (AGENTS.md / CLAUDE.md): it
+# stays out of the project's / developer's own instruction files entirely. All
+# managed content lives under these scaffolding dirs.
+MANAGED_TOP_LEVEL_FILES: set[Path] = set()
+MANAGED_SCAFFOLD_DIRS = (".claude", ".agents", ".deployed-agents")
 GITIGNORE_BEGIN = "# >>> coding-agents (managed by deploy.py) — do not edit inside this block >>>"
 GITIGNORE_END = "# <<< coding-agents (managed by deploy.py) <<<"
 
@@ -181,31 +185,25 @@ def should_promote(prompt: str, template_updates: str, interactive: bool) -> boo
 def translate_path(rel: Path) -> Path:
     """Translate placeholder dir names in the template tree to the real target names.
 
-    The template tree uses `_claude` and `_agents` because the harness blocks
-    writing source files inside literal `.claude` / `.agents` directories. On
+    The template tree uses `_claude`, `_agents`, and `_deployed-agents` because
+    the harness blocks writing source files inside literal dotted dirs. On
     deploy we rewrite the path back to the conventional dotted names.
     """
-    parts = []
-    for p in rel.parts:
-        if p == "_claude":
-            parts.append(".claude")
-        elif p == "_agents":
-            parts.append(".agents")
-        else:
-            parts.append(p)
-    return Path(*parts)
+    mapping = {
+        "_claude": ".claude",
+        "_agents": ".agents",
+        "_deployed-agents": ".deployed-agents",
+    }
+    return Path(*[mapping.get(p, p) for p in rel.parts])
 
 
 def reverse_translate_path(rel: Path) -> Path:
-    parts = []
-    for p in rel.parts:
-        if p == ".claude":
-            parts.append("_claude")
-        elif p == ".agents":
-            parts.append("_agents")
-        else:
-            parts.append(p)
-    return Path(*parts)
+    mapping = {
+        ".claude": "_claude",
+        ".agents": "_agents",
+        ".deployed-agents": "_deployed-agents",
+    }
+    return Path(*[mapping.get(p, p) for p in rel.parts])
 
 
 def iter_template_files(root: Path):
@@ -531,7 +529,7 @@ def iter_managed_project_files(target: Path) -> list[Path]:
     for rel in sorted(MANAGED_TOP_LEVEL_FILES):
         if (target / rel).is_file():
             files.append(rel)
-    for root_name in (".claude", ".agents"):
+    for root_name in MANAGED_SCAFFOLD_DIRS:
         root = target / root_name
         if not root.is_dir():
             continue
@@ -924,9 +922,9 @@ def git_path_tracked(repo_root: Path, abs_path: Path) -> bool:
 
 def gitignore_candidate_rels(skill_root: Path, role: str) -> list[Path]:
     """Translated target-relative paths the deploy writes that are agent scaffolding:
-    everything under `.claude/` or `.agents/`, plus `AGENTS.md` / `CLAUDE.md`. The
-    implementation plan and other project docs are intentionally excluded — they stay
-    tracked."""
+    everything under `.claude/`, `.agents/`, or `.deployed-agents/`. The overlay
+    writes no root-level files. The implementation plan and other project docs are
+    intentionally excluded — they stay tracked."""
     roots = [skill_root / "templates" / "common"]
     if role in ("claude-codes", "both"):
         roots.append(skill_root / "templates" / "coder-claude")
@@ -938,7 +936,7 @@ def gitignore_candidate_rels(skill_root: Path, role: str) -> list[Path]:
             continue
         for rel, _abs in iter_template_files(root):
             top = rel.parts[0] if rel.parts else ""
-            if top in (".claude", ".agents") or rel in MANAGED_TOP_LEVEL_FILES:
+            if top in MANAGED_SCAFFOLD_DIRS or rel in MANAGED_TOP_LEVEL_FILES:
                 rels.add(rel)
     return sorted(rels)
 

@@ -4,16 +4,17 @@ Canonical reference for the current `deploy-coding-agents` skill. This document 
 
 ## Purpose
 
-`deploy-coding-agents` installs a coordinated Claude + Codex coding-agent setup into a target project. Given a target path and role assignment, it renders or merges:
+`deploy-coding-agents` installs a coordinated Claude + Codex coding-agent setup into a target project as a **non-invasive overlay**. Given a target path and role assignment, it renders or merges:
 
-- `AGENTS.md`
-- `CLAUDE.md`
+- `.deployed-agents/conventions.md` — the single source of truth for the deployed agents
 - `.claude/` commands, agents, and settings
 - `.agents/` commands, agents, skills, and skill manifests
 
+It deliberately writes **no** root-level files. The project's own `AGENTS.md` / `CLAUDE.md` are never read, written, backed up, or merged — the overlay sits entirely within its own gitignored scaffolding dirs. Conventions are workflow-scoped (loaded when a deployed command runs) rather than ambient, which is the explicit trade-off for not touching the developer's setup.
+
 The rendered output is tailored with detected stack information, build/test commands, the implementation-plan path, and stack-specific conventions.
 
-When the target already has agent files, merge-aware deploys preserve project-only content, ask the user how to resolve same-section conflicts when interactive, and can promote reusable project ideas back into this repository's source templates before the target project is updated.
+When the target already has *deployed* agent files (e.g. a prior `.deployed-agents/conventions.md`), merge-aware deploys preserve project-only content, ask the user how to resolve same-section conflicts when interactive, and can promote reusable project ideas back into this repository's source templates before the target project is updated.
 
 ## Source Layout
 
@@ -30,8 +31,7 @@ C:\vsprojects\jako-agents\
       deploy.py
     templates\
       common\
-        AGENTS.md
-        CLAUDE.md
+        _deployed-agents\conventions.md
         _claude\settings.json
       coder-claude\
         _claude\agents\review-iterate.md
@@ -64,7 +64,7 @@ C:\vsprojects\jako-agents\
 
 ## Template Path Translation
 
-Template directories named `_claude` and `_agents` deploy as `.claude` and `.agents`. `scripts/deploy.py` translates those path segments while writing files to the target project. The generated project never receives `_claude` or `_agents` paths.
+Template directories named `_claude`, `_agents`, and `_deployed-agents` deploy as `.claude`, `.agents`, and `.deployed-agents`. `scripts/deploy.py` translates those path segments while writing files to the target project. The generated project never receives the underscore-prefixed paths.
 
 ## Role Model
 
@@ -90,7 +90,7 @@ The setup has two lanes: Claude and Codex. The coding lane gets the rich impleme
 | `archive-plan` | Outer reviewer | Archive a fully-completed plan into a dated `archive/` file and start a fresh, task-free plan that carries forward only durable context. Refuses to run while any task is outstanding and asks the user how to proceed. |
 | `review-and-fix` | Both lanes | Create a canonical implementation plan or repair structural gaps in an existing one. |
 
-`AGENTS.md` is the shared instruction source. `CLAUDE.md` inherits it with `@AGENTS.md`.
+`.deployed-agents/conventions.md` is the shared instruction source for the deployed agents, referenced by every command and skill in both lanes. No root-level `AGENTS.md` / `CLAUDE.md` is deployed; the project's own copies (if any) are left untouched.
 
 ## Deployment Flow
 
@@ -110,7 +110,7 @@ The setup has two lanes: Claude and Codex. The coding lane gets the rich impleme
 
 The deploy keeps agent scaffolding out of version control by default:
 
-- Scope: every file the deploy writes under `.claude/` or `.agents/`, plus `AGENTS.md` / `CLAUDE.md`. The implementation plan and all other project files are out of scope and stay tracked.
+- Scope: every file the deploy writes under `.claude/`, `.agents/`, or `.deployed-agents/`. The overlay writes no root-level files, so the project's own `AGENTS.md` / `CLAUDE.md`, the implementation plan, and all other project files are out of scope and stay tracked.
 - Per-path exception: a path is **not** ignored when git already tracks it before the deploy (the project version-controls it on purpose — "it existed previously and was not gitignored"). Git-tracked status, not mere on-disk presence, is the signal, so wiping the managed block and redeploying self-heals instead of leaking scaffolding.
 - The entries live in a single managed block (delimited by `# >>> coding-agents (managed by deploy.py) … >>>` / `# <<< … <<<`) at the repository root's `.gitignore`, with repo-root-relative anchored paths. The block is rewritten idempotently each deploy; content outside it is preserved.
 - To start tracking a scaffolding file, `git add` it: the next deploy sees it tracked and drops it from the managed block.

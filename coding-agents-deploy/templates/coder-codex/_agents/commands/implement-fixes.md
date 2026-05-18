@@ -11,7 +11,7 @@ Take a user-provided list of findings, implement the fixes, spawn the `review-it
 
 ### 0. First-run check
 
-Before anything else, do the **First-run self-configuration** in `AGENTS.md`: if any `<add …>` / `Unknown stack` / generic-fallback deploy placeholders remain, fill them from the actual repo (this file's commands, `.claude/settings.json`, and the `review-iterate` agent), report a one-line summary, then continue. Skip once the placeholders are gone.
+Before anything else, do the **First-run self-configuration** in `.deployed-agents/conventions.md`: if any `<add …>` / `Unknown stack` / generic-fallback deploy placeholders remain, fill them from the actual repo (this file's commands, `.claude/settings.json`, and the `review-iterate` agent), report a one-line summary, then continue. Skip once the placeholders are gone.
 
 ### 1. Parse findings
 
@@ -31,7 +31,7 @@ Run `git fetch origin && git status --short --untracked-files=all`. Untracked fi
 
 ### 3. Implement the fixes
 
-Work systematically through each finding. Follow project conventions in `AGENTS.md`. Do not exceed the scope of the findings.
+Work systematically through each finding. Follow project conventions in `.deployed-agents/conventions.md`. Do not exceed the scope of the findings.
 
 **Apply every finding in full before you build or call the reviewer.** Finish the entire findings list — no partial passes, no building or spawning the reviewer with some findings still unaddressed. Before leaving this step, walk the findings list item by item and confirm each is actually resolved in the code. The build and the reviewer are gates on the *complete* fix set, not a progress check on a partial one — a partial pass just burns a build/review cycle.
 

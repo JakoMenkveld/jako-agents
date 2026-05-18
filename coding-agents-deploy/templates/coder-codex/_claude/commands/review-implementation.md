@@ -59,7 +59,7 @@ Repository root is the current workspace. Plan file: `{{plan_path}}`.
 
 ## Workflow
 
-0. **First-run check.** Before anything else, do the **First-run self-configuration** in `AGENTS.md`: if any `<add …>` / `Unknown stack` / generic-fallback deploy placeholders remain, fill them from the actual repo (`AGENTS.md`, `.claude/settings.json`, the `review-iterate` agent), report a one-line summary, then continue. Skip once the placeholders are gone.
+0. **First-run check.** Before anything else, do the **First-run self-configuration** in `.deployed-agents/conventions.md`: if any `<add …>` / `Unknown stack` / generic-fallback deploy placeholders remain, fill them from the actual repo (`.deployed-agents/conventions.md`, `.claude/settings.json`, the `review-iterate` agent), report a one-line summary, then continue. Skip once the placeholders are gone.
 
 1. **Survey state — including untracked files.** Run `git status --short --untracked-files=all`, `git diff --check`, and `git ls-files --others --exclude-standard`. **Untracked files are part of the review surface** — do not approve if relevant implementation files are untracked and you didn't inspect them. Read the selected phase(s) in `{{plan_path}}` in full — `### Work`, `### Acceptance Criteria`, surrounding `## Phase Flow`, `## Recommended Execution Order`, `## Open Questions`, `## Residual Risks`. Read supporting docs in the repo when they overlap.
 
@@ -92,7 +92,7 @@ Use selectively but explicitly; skip items only when irrelevant.
 
 - **Phase artifacts.** Every change promised by the target phase exists in the expected location with the expected shape.
 - **Plan compliance.** Each acceptance criterion is satisfied and verifiable now, or marked partial with a reason.
-- **Conventions** (see `AGENTS.md` and `.agents/agents/review-iterate.md`).
+- **Conventions** (see `.deployed-agents/conventions.md` and `.agents/agents/review-iterate.md`).
 - **Race conditions / transactions** where the phase owns write behavior.
 - **Tests.** New behaviour has a test. Test names match what the body asserts.
 - **Documentation.** Stale supporting-docs text → `DOC` finding. Flag the drift; do not silently rewrite.

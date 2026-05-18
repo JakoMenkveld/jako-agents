@@ -4,7 +4,7 @@ Versioned home for [@JakoMenkveld](https://github.com/JakoMenkveld)'s agentic-wo
 
 ## Contents
 
-- **[`coding-agents-deploy/`](coding-agents-deploy/)** — Cowork / Claude Code skill that deploys a coordinated Claude+Codex coding-agent setup into any project. Pick a role (Claude codes + Codex reviews, or vice versa, or both), and the skill renders the right `.claude/` + `.agents/` + `AGENTS.md` + `CLAUDE.md` tree, tailored to the target project's stack.
+- **[`coding-agents-deploy/`](coding-agents-deploy/)** — Cowork / Claude Code skill that deploys a coordinated Claude+Codex coding-agent setup into any project. Pick a role (Claude codes + Codex reviews, or vice versa, or both), and the skill renders a non-invasive overlay — a gitignored `.deployed-agents/` source-of-truth plus `.claude/` + `.agents/` trees — tailored to the target project's stack. It never touches the project's own `AGENTS.md` / `CLAUDE.md`.
 
 Future entries (separate sub-folders) will live alongside as new agentic patterns get distilled.
 

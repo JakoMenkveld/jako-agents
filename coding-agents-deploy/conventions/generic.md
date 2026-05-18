@@ -4,4 +4,4 @@
 - **Test discipline**: new behaviour has a test. Test names match what the body actually verifies.
 - **No production-safety dance**: no feature flags, no `// TODO: drop after vN` markers, no deprecation paths unless the plan explicitly scopes one. Rename → rename everywhere; remove → remove.
 - **Build cleanliness**: zero new errors / warnings introduced by the diff.
-- **Note**: this is a generic fallback. Edit `AGENTS.md` to add stack-specific rules once the project conventions are nailed down.
+- **Note**: this is a generic fallback. Edit `.deployed-agents/conventions.md` to add stack-specific rules once the project conventions are nailed down.

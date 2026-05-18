@@ -15,7 +15,7 @@ When implementing multiple phases, implement them all before building, testing, 
 
 ### 0. First-run check
 
-Before anything else, do the **First-run self-configuration** in `AGENTS.md`: if any `<add …>` / `Unknown stack` / generic-fallback deploy placeholders remain, fill them from the actual repo (this file's commands, `.claude/settings.json`, and the `review-iterate` agent), report a one-line summary, then continue. Skip once the placeholders are gone.
+Before anything else, do the **First-run self-configuration** in `.deployed-agents/conventions.md`: if any `<add …>` / `Unknown stack` / generic-fallback deploy placeholders remain, fill them from the actual repo (this file's commands, `.claude/settings.json`, and the `review-iterate` agent), report a one-line summary, then continue. Skip once the placeholders are gone.
 
 ### 1. Determine which phases to implement
 
@@ -37,7 +37,7 @@ Run `git fetch origin && git status --short --untracked-files=all` and report wh
 
 ### 3. Implement the phases
 
-Implement every artifact listed under each target phase. Follow the project conventions in `AGENTS.md` and {{plan_path}}. Reuse existing helpers before introducing new ones — grep first.
+Implement every artifact listed under each target phase. Follow the project conventions in `.deployed-agents/conventions.md` and {{plan_path}}. Reuse existing helpers before introducing new ones — grep first.
 
 **Implement the phase in full before you build or call the reviewer.** Every artifact, file, and task the phase calls out must be written and wired — no partial passes, no "build now and finish the rest after the review". Before leaving this step, re-read the phase and walk its `### Work`, `### Acceptance Criteria`, and file list against what you actually wrote; if any item is unwritten, stubbed where the plan expects an implementation, or only half-done, finish it now. The build and the reviewer are gates on a *complete* phase, not a progress check on a partial one — a partial pass just burns a build/review cycle.
 

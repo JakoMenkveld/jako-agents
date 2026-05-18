@@ -1,6 +1,6 @@
 # deploy-coding-agents
 
-A Cowork / Claude Code skill that deploys a "best of breed" set of coding-agent files (`.claude/`, `.agents/`, `AGENTS.md`, `CLAUDE.md`) into a project, with the role assignment of your choice:
+A Cowork / Claude Code skill that deploys a "best of breed" set of coding-agent files as a **non-invasive overlay** (`.claude/`, `.agents/`, and a gitignored `.deployed-agents/` source-of-truth — never the project's own `AGENTS.md` / `CLAUDE.md`) into a project, with the role assignment of your choice:
 
 - **`claude-codes`** — Claude implements the plan, Codex does the outer review.
 - **`codex-codes`** — Codex implements the plan, Claude does the outer review.
@@ -10,7 +10,7 @@ Every role also deploys a **`review-and-fix`** skill to both Claude and Codex �
 
 ## How it works
 
-The skill scans a target project, detects its stack (build/test commands, framework conventions, plan file path), then renders a parameterized template tree into the project. Existing files are backed up with a timestamped `.bak.` suffix before being changed. In merge mode, existing Markdown agent files are merged by heading so project-specific sections survive, conflicts can be resolved interactively, and useful project-only additions can be promoted back into this repo's templates for future deployments.
+The skill scans a target project, detects its stack (build/test commands, framework conventions, plan file path), then renders a parameterized template tree into the project as an overlay. It never reads, writes, or merges the project's own `AGENTS.md` / `CLAUDE.md`; the deployed agents' single source of truth is the gitignored `.deployed-agents/conventions.md`. Existing *scaffolding* files are backed up with a timestamped `.bak.` suffix before being changed. In merge mode, an existing `.deployed-agents/conventions.md` (e.g. one carrying filled-in self-config) is merged by heading so project-only sections survive across redeploys, conflicts can be resolved interactively, and useful additions can be promoted back into this repo's templates for future deployments.
 
 The deploy also ensures an implementation plan exists. If the detected plan path is missing, it creates a starter canonical plan. If a plan exists, it backs it up and fills missing structural sections without deleting existing plan content.
 
@@ -35,7 +35,7 @@ deploy-coding-agents/
     detect_stack.py         # inspects target project, emits JSON
     deploy.py               # renders/merges templates, manages plan file, prints summary
   templates/
-    common/                 # AGENTS.md, CLAUDE.md, .claude/settings.json
+    common/                 # _deployed-agents/conventions.md, .claude/settings.json
     coder-claude/           # role: Claude codes, Codex reviews (+ review-and-fix in both lanes)
     coder-codex/            # role: Codex codes, Claude reviews (+ review-and-fix in both lanes)
   conventions/              # per-stack convention blocks (dotnet/typescript/python/go/generic)
@@ -62,11 +62,11 @@ The templates baked these patterns in:
 - **Severity tags** — `BLOCKER` / `MAJOR` / `MINOR` / `NIT` / `DOC` (Tuple) plus `[SHARED]` for shared-library suggestions (Gold).
 - **Read-only inner reviewer** — no Write/Edit tools; never commits or changes git state.
 - **Outer reviewers commit on finish** — `review-implementation` (when the plan changed) and `archive-plan` commit locally, never push; the inner `review-iterate` never commits.
-- **Scaffolding gitignored on deploy** — `.claude/`, `.agents/`, `AGENTS.md`, `CLAUDE.md` go into a managed `.gitignore` block, except paths git already tracks; the plan is never ignored.
+- **Scaffolding gitignored on deploy** — `.claude/`, `.agents/`, `.deployed-agents/` go into a managed `.gitignore` block, except paths git already tracks; the plan is never ignored.
 - **Fetch-first** — `git fetch && git status` before any work.
 - **3-cycle implementer↔reviewer cap** — stop and surface to user.
 - **No status-marker bookkeeping** — implementers/inner reviewers never report or touch the status surface (`[ ]`/`[x]`, headings, `Status:` lines, Phase Status table, Mermaid node icons + `class` lines); `review-implementation` owns and updates all of it.
-- **`AGENTS.md` is source of truth** — `CLAUDE.md` inherits via `@AGENTS.md`.
+- **Non-invasive overlay** — `.deployed-agents/conventions.md` is the deployed agents' source of truth; the project's own `AGENTS.md` / `CLAUDE.md` are never read, written, or merged. Conventions are workflow-scoped, not ambient.
 - **Append-only `## Open Questions`** in plan reviews.
 - **Terse paragraph reports**, not bulleted task lists, for final review output.
 - **`commit-and-sync` with optional `release` semver auto-bump** (from drydoc).
