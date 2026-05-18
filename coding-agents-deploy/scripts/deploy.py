@@ -47,6 +47,21 @@ PHASE_RE = re.compile(
 # managed content lives under these scaffolding dirs.
 MANAGED_TOP_LEVEL_FILES: set[Path] = set()
 MANAGED_SCAFFOLD_DIRS = (".claude", ".agents", ".deployed-agents")
+# Deployed workflows that are intentionally part of every dev's repo: they are
+# version-controlled, not added to the managed .gitignore block. `commit-and-sync`
+# is deployed to the Claude side for every role (from templates/common/) and to
+# the Codex side in the coder lane; all of its files (commands + skill shim, both
+# sides) stay tracked.
+TRACKED_WORKFLOW_NAMES = {"commit-and-sync"}
+
+
+def is_tracked_workflow(rel: Path) -> bool:
+    """True for deployed files that must stay version-controlled rather than
+    going into the managed .gitignore block (matches the command file and any
+    skill-shim directory of a tracked workflow, on either side)."""
+    return rel.stem in TRACKED_WORKFLOW_NAMES or any(
+        part in TRACKED_WORKFLOW_NAMES for part in rel.parts
+    )
 GITIGNORE_BEGIN = "# >>> coding-agents (managed by deploy.py) — do not edit inside this block >>>"
 GITIGNORE_END = "# <<< coding-agents (managed by deploy.py) <<<"
 
@@ -540,7 +555,11 @@ def iter_managed_project_files(target: Path) -> list[Path]:
 
 
 def choose_template_root_for_project_file(skill_root: Path, role: str, rel: Path) -> Path:
-    if rel in MANAGED_TOP_LEVEL_FILES or rel == Path(".claude/settings.json"):
+    if (
+        rel in MANAGED_TOP_LEVEL_FILES
+        or rel == Path(".claude/settings.json")
+        or rel == Path(".claude/commands/commit-and-sync.md")
+    ):
         return skill_root / "templates" / "common"
     first = rel.parts[0] if rel.parts else ""
     if first == ".claude":
@@ -922,8 +941,9 @@ def git_path_tracked(repo_root: Path, abs_path: Path) -> bool:
 
 def gitignore_candidate_rels(skill_root: Path, role: str) -> list[Path]:
     """Translated target-relative paths the deploy writes that are agent scaffolding:
-    everything under `.claude/`, `.agents/`, or `.deployed-agents/`. The overlay
-    writes no root-level files. The implementation plan and other project docs are
+    everything under `.claude/`, `.agents/`, or `.deployed-agents/`, except
+    intentionally-tracked workflows (see `is_tracked_workflow`). The overlay writes
+    no root-level files. The implementation plan and other project docs are
     intentionally excluded — they stay tracked."""
     roots = [skill_root / "templates" / "common"]
     if role in ("claude-codes", "both"):
@@ -935,6 +955,8 @@ def gitignore_candidate_rels(skill_root: Path, role: str) -> list[Path]:
         if not root.is_dir():
             continue
         for rel, _abs in iter_template_files(root):
+            if is_tracked_workflow(rel):
+                continue
             top = rel.parts[0] if rel.parts else ""
             if top in MANAGED_SCAFFOLD_DIRS or rel in MANAGED_TOP_LEVEL_FILES:
                 rels.add(rel)

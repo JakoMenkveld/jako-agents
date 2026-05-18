@@ -244,5 +244,50 @@ class GitignoreTests(unittest.TestCase):
             self.assertIn("/.claude/commands/implement-phase.md", healed)
 
 
+class TrackedWorkflowTests(unittest.TestCase):
+    SKILL_ROOT = Path(__file__).resolve().parents[1]
+
+    def test_is_tracked_workflow_matches_commit_and_sync_both_sides(self) -> None:
+        for rel in (
+            Path(".claude/commands/commit-and-sync.md"),
+            Path(".agents/commands/commit-and-sync.md"),
+            Path(".agents/skills/commit-and-sync/SKILL.md"),
+            Path(".agents/skills/commit-and-sync/agents/openai.yaml"),
+        ):
+            self.assertTrue(deploy.is_tracked_workflow(rel), rel)
+        for rel in (
+            Path(".claude/commands/implement-phase.md"),
+            Path(".agents/commands/review-and-fix.md"),
+            Path(".deployed-agents/conventions.md"),
+        ):
+            self.assertFalse(deploy.is_tracked_workflow(rel), rel)
+
+    def test_commit_and_sync_excluded_from_gitignore_candidates_every_role(self) -> None:
+        for role in ("claude-codes", "codex-codes", "both"):
+            rels = deploy.gitignore_candidate_rels(self.SKILL_ROOT, role)
+            self.assertTrue(rels, role)
+            self.assertFalse(
+                any("commit-and-sync" in rel.as_posix() for rel in rels),
+                f"commit-and-sync leaked into gitignore candidates for {role}",
+            )
+            # Other scaffolding is still ignored.
+            self.assertTrue(
+                any(rel.name == "implement-phase.md" for rel in rels), role
+            )
+
+    def test_claude_commit_and_sync_deployed_for_every_role(self) -> None:
+        common_claude = (
+            self.SKILL_ROOT
+            / "templates" / "common" / "_claude" / "commands" / "commit-and-sync.md"
+        )
+        self.assertTrue(common_claude.is_file())
+        # The redundant coder-claude copy is gone (common covers claude-codes too).
+        stale = (
+            self.SKILL_ROOT
+            / "templates" / "coder-claude" / "_claude" / "commands" / "commit-and-sync.md"
+        )
+        self.assertFalse(stale.exists())
+
+
 if __name__ == "__main__":
     unittest.main()

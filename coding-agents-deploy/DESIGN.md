@@ -33,9 +33,9 @@ C:\vsprojects\jako-agents\
       common\
         _deployed-agents\conventions.md
         _claude\settings.json
+        _claude\commands\commit-and-sync.md
       coder-claude\
         _claude\agents\review-iterate.md
-        _claude\commands\commit-and-sync.md
         _claude\commands\implement-fixes.md
         _claude\commands\implement-phase.md
         _claude\commands\review-and-fix.md
@@ -72,11 +72,13 @@ The setup has two lanes: Claude and Codex. The coding lane gets the rich impleme
 
 | Role | Coder lane | Reviewer lane |
 |------|------------|---------------|
-| `claude-codes` | `.claude/commands/{implement-phase,implement-fixes,commit-and-sync,review-and-fix}.md` and `.claude/agents/review-iterate.md` | `.agents/skills/{review-implementation,archive-plan,review-and-fix}/` |
+| `claude-codes` | `.claude/commands/{implement-phase,implement-fixes,review-and-fix}.md` and `.claude/agents/review-iterate.md` | `.agents/skills/{review-implementation,archive-plan,review-and-fix}/` |
 | `codex-codes` | `.agents/commands/{implement-phase,implement-fixes,commit-and-sync,review-and-fix}.md`, `.agents/agents/review-iterate.md`, and `.agents/skills/<command>/` shims | `.claude/commands/{review-implementation,archive-plan,review-and-fix}.md` |
 | `both` | Union of both coder lanes | Union of both reviewer lanes |
 
 `review-and-fix` is present in both lanes for every role because plan creation and plan repair are shared operations.
+
+`commit-and-sync` is deployed to the **Claude side for every role**, sourced from `templates/common/_claude/commands/commit-and-sync.md` (independent of which side codes). The Codex `commit-and-sync` command + skill shim is part of the Codex coder lane (`codex-codes` / `both`). All `commit-and-sync` files — both sides — are intentionally version-controlled, not added to the managed `.gitignore` block (see Gitignore Contract).
 
 ## Deployed Workflows
 
@@ -84,7 +86,7 @@ The setup has two lanes: Claude and Codex. The coding lane gets the rich impleme
 |----------|------|---------|
 | `implement-phase` | Coder only | Implement one or more plan phases, run the inner review loop, and commit locally. |
 | `implement-fixes` | Coder only | Apply user-provided findings, run the inner review loop, and commit locally. |
-| `commit-and-sync` | Coder only | Commit working-tree changes, push, and optionally create a semver release or explicit tag. |
+| `commit-and-sync` | Claude side every role; Codex coder lane | Commit working-tree changes, push, and optionally create a semver release or explicit tag. Version-controlled, not gitignored. |
 | `review-iterate` | Coder inner reviewer | Read-only critical reviewer used inside implementation loops. Claude uses Sonnet; Codex uses `gpt-5.5` with medium reasoning effort. |
 | `review-implementation` | Outer reviewer | Review one or more implementation phases, update the full plan status surface (headings, Work/Acceptance bullets, checkboxes, Phase Status table, per-phase Status lines, Phase Flow Mermaid node labels + class lines) in the plan's own legend within its narrow write policy, and commit the review locally. |
 | `archive-plan` | Outer reviewer | Archive a fully-completed plan into a dated `archive/` file and start a fresh, task-free plan that carries forward only durable context. Refuses to run while any task is outstanding and asks the user how to proceed. |
@@ -110,7 +112,8 @@ The setup has two lanes: Claude and Codex. The coding lane gets the rich impleme
 
 The deploy keeps agent scaffolding out of version control by default:
 
-- Scope: every file the deploy writes under `.claude/`, `.agents/`, or `.deployed-agents/`. The overlay writes no root-level files, so the project's own `AGENTS.md` / `CLAUDE.md`, the implementation plan, and all other project files are out of scope and stay tracked.
+- Scope: every file the deploy writes under `.claude/`, `.agents/`, or `.deployed-agents/`, **except intentionally-tracked workflows**. The overlay writes no root-level files, so the project's own `AGENTS.md` / `CLAUDE.md`, the implementation plan, and all other project files are out of scope and stay tracked.
+- Tracked-workflow exception: `commit-and-sync` (its command file on the Claude and Codex sides, plus the Codex `.agents/skills/commit-and-sync/` shim) is deliberately omitted from the managed block so it becomes part of every dev's repo. Identified by path via `is_tracked_workflow`, independent of git state.
 - Per-path exception: a path is **not** ignored when git already tracks it before the deploy (the project version-controls it on purpose — "it existed previously and was not gitignored"). Git-tracked status, not mere on-disk presence, is the signal, so wiping the managed block and redeploying self-heals instead of leaking scaffolding.
 - The entries live in a single managed block (delimited by `# >>> coding-agents (managed by deploy.py) … >>>` / `# <<< … <<<`) at the repository root's `.gitignore`, with repo-root-relative anchored paths. The block is rewritten idempotently each deploy; content outside it is preserved.
 - To start tracking a scaffolding file, `git add` it: the next deploy sees it tracked and drops it from the managed block.

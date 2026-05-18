@@ -62,7 +62,7 @@ The templates baked these patterns in:
 - **Severity tags** — `BLOCKER` / `MAJOR` / `MINOR` / `NIT` / `DOC` (Tuple) plus `[SHARED]` for shared-library suggestions (Gold).
 - **Read-only inner reviewer** — no Write/Edit tools; never commits or changes git state.
 - **Outer reviewers commit on finish** — `review-implementation` (when the plan changed) and `archive-plan` commit locally, never push; the inner `review-iterate` never commits.
-- **Scaffolding gitignored on deploy** — `.claude/`, `.agents/`, `.deployed-agents/` go into a managed `.gitignore` block, except paths git already tracks; the plan is never ignored.
+- **Scaffolding gitignored on deploy** — `.claude/`, `.agents/`, `.deployed-agents/` go into a managed `.gitignore` block, except paths git already tracks and intentionally-tracked workflows (`commit-and-sync`); the plan is never ignored.
 - **Fetch-first** — `git fetch && git status` before any work.
 - **3-cycle implementer↔reviewer cap** — stop and surface to user.
 - **No status-marker bookkeeping** — implementers/inner reviewers never report or touch the status surface (`[ ]`/`[x]`, headings, `Status:` lines, Phase Status table, Mermaid node icons + `class` lines); `review-implementation` owns and updates all of it.
@@ -77,7 +77,7 @@ The templates baked these patterns in:
 |-------|------|------|---------|
 | `implement-phase` | coder | coder's lane only | Implement one or more plan phases, run inner review loop, commit locally. |
 | `implement-fixes` | coder | coder's lane only | Apply a user-provided list of findings, review, iterate, commit. |
-| `commit-and-sync` | coder | coder's lane only | Commit working tree, push, optional semver release tag. |
+| `commit-and-sync` | utility | Claude (every role) + Codex coder lane | Commit working tree, push, optional semver release tag. Tracked, not gitignored. |
 | `review-iterate` | coder's inner reviewer | coder's lane only | Read-only critical reviewer used inside the implementer's loop. |
 | `review-implementation` | outer reviewer | reviewer's lane only | Human-driven outer review of a phase; truthfully updates the whole status surface (headings, bullets, checkboxes, Phase Status table, per-phase Status lines, Mermaid graph node labels + class lines) in the plan's own legend, then commits locally. |
 | `archive-plan` | outer reviewer | reviewer's lane only | Archive a fully-completed plan into a dated `archive/` file and start a fresh, task-free plan carrying forward only durable context. Refuses to run with outstanding tasks and asks the user how to proceed. |
