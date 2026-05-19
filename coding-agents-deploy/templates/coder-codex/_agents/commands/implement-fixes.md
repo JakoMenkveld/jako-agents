@@ -35,7 +35,7 @@ Work systematically through each finding. Follow project conventions in `.deploy
 
 **Apply every finding in full before you build or call the reviewer.** Finish the entire findings list — no partial passes, no building or spawning the reviewer with some findings still unaddressed. Before leaving this step, walk the findings list item by item and confirm each is actually resolved in the code. The build and the reviewer are gates on the *complete* fix set, not a progress check on a partial one — a partial pass just burns a build/review cycle.
 
-Do NOT modify `{{plan_path}}` or related plan/data-model docs.
+Do NOT modify `{{plan_path}}` or related plan/data-model docs. The `## Decisions` section is free-form and live: if a fix reveals a decision that should be added or changed, you may *suggest* that edit (state the proposed Decisions wording in your report for the user/reviewer to apply) — but never edit the plan yourself.
 
 ### 4. Build
 

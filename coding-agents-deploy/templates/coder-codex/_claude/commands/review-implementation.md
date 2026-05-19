@@ -17,7 +17,7 @@ Review one or more {{project_name}} implementation phases end to end, update `{{
 - A per-phase `Status:` line directly beneath the phase heading.
 - Task/checklist checkboxes (`- [ ]` → `- [x]`) and `## Files to Create or Modify` / file-inventory bullets for the reviewed phase – flip an individual item only when that specific item is verified complete in code.
 - Concise partial-reason notes inside the bracketed marker, e.g. `⚠️ [partial: SetMeasures fixed but tests pending]`.
-- `## Decisions`: **append-only**. Append a decision here only when the user explicitly made, confirmed, or ratified it during this review. Do NOT edit, renumber, resolve, remove, or move existing entries – the user owns them. An empty `## Decisions`, or one that just notes there are none, is correct and must never be flagged or "filled in".
+- `## Decisions`: **free-form and live.** Add, edit, reword, reorganize, or remove entries so the section accurately records the decisions the user made, confirmed, ratified, or revised during design or implementation. It is NOT append-only and NOT a fixed numbered list. Never fabricate a decision the user did not make; when unsure whether something is settled, surface it instead of writing it. An empty `## Decisions`, or one noting there are none, is fine and never flagged.
 - `## Open Questions`: **append-only**. Add new questions to the bottom of the numbered list. Do NOT edit, renumber, mark, resolve, remove, or move existing entries – the user resolves Open Questions manually. An empty `## Open Questions`, or one whose only content is a note such as `None.` / `No open questions.`, is fully acceptable: it is never a finding and never blocks phase completion. Append only a genuine new question.
 - `## Residual Risks`: add new items raised during the review, remove risks resolved by shipped code, re-word risks whose blast radius has changed.
 
@@ -25,7 +25,7 @@ Review one or more {{project_name}} implementation phases end to end, update `{{
 
 **Disallowed edits:**
 - Adding new phase sections, renaming phases, rewriting acceptance-criteria text, moving text between phases, or changing any non-marker plan content. If the plan is structurally stale, report that to the user instead of restructuring it.
-- Editing, renumbering, resolving, or removing any existing `## Decisions` or `## Open Questions` entry, or flagging either section as a defect when it is empty or notes there are none.
+- Editing, renumbering, resolving, or removing any existing `## Open Questions` entry, or flagging an empty `## Open Questions` / `## Decisions` (or a "none" note) as a defect. (`## Decisions` itself is free-form and editable – see the allowed edits.)
 
 Status icons:
 - `✅` — complete.
@@ -79,7 +79,7 @@ Repository root is the current workspace. Plan file: `{{plan_path}}`.
    - In the `## Phase Flow` Mermaid graph, update **both** the icon in the phase's node label **and** its `class <node> <className>` line so they agree. When a phase is fully done, also update every inbound/outbound edge whose connected nodes are both done.
    - In `## Recommended Execution Order`, apply the same markers.
    - Apply markers to every other reference to the reviewed phase elsewhere in the plan.
-   - Walk `## Decisions` and `## Open Questions` (both append-only) and `## Residual Risks` (add/remove/reword) per the policy above. Leaving `## Decisions` or `## Open Questions` empty (or as a "none" note) is correct when nothing arose – do not add placeholder content.
+   - Update `## Decisions` (free-form, live) so it reflects every decision made, confirmed, or changed during this review; walk `## Open Questions` (append-only) and `## Residual Risks` (add/remove/reword) per the policy above. Leaving `## Decisions` or `## Open Questions` empty (or as a "none" note) is correct when nothing arose – do not add placeholder content.
 
 6. **Run verification**: `{{build_cmd}}` always; `{{test_cmd}}` when tests exist. **Passing tests are necessary but not sufficient** — confirm the tests actually prove each acceptance criterion, not just that they execute. A test whose name implies coverage but whose body doesn't exercise the claimed behavior is a finding. Record which phases the verification covered.
 
@@ -97,7 +97,7 @@ Use selectively but explicitly; skip items only when irrelevant.
 - **Race conditions / transactions** where the phase owns write behavior.
 - **Tests.** New behaviour has a test. Test names match what the body asserts.
 - **Documentation.** Stale supporting-docs text → `DOC` finding. Flag the drift; do not silently rewrite.
-- **Decisions, Open Questions, and Residual Risks.** Append questions surfaced by the review to `## Open Questions`; append user-ratified decisions to `## Decisions`. An empty `## Open Questions` or `## Decisions` (or a "none" note) is acceptable and never a finding. Update risks per the policy.
+- **Decisions, Open Questions, and Residual Risks.** Append questions surfaced by the review to `## Open Questions` (append-only). Maintain `## Decisions` (free-form, live): record new decisions and revise or remove entries that changed during the review. An empty `## Open Questions` or `## Decisions` (or a "none" note) is acceptable and never a finding. Update risks per the policy.
 
 ## Completion Rules
 

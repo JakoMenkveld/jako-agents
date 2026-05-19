@@ -904,8 +904,9 @@ def repair_plan_text(text: str, info: dict) -> tuple[str, list[str]]:
         text = text.rstrip() + "\n\n## Open Questions\n"
         changes.append("Added ## Open Questions")
     if not has_top_section(text, "Decisions"):
-        # Decisions sits immediately before Open Questions. An empty section is
-        # acceptable; it is populated only when the user ratifies a decision.
+        # Decisions sits immediately before Open Questions. It is a free-form,
+        # live section the user and review-implementation maintain; deploy only
+        # ensures the heading exists and never touches its content.
         oq = re.search(r"(?m)^##\s+Open Questions\s*$", text)
         decisions_block = "## Decisions\n\n"
         if oq:

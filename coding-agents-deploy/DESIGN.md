@@ -180,7 +180,7 @@ The deployed workflows share these rules:
 - Passing tests are necessary but not sufficient; reviewers check that tests prove the relevant acceptance criteria.
 - Generic agents do not edit plan status markers. `review-implementation` is the explicit exception and may update markers under its plan write policy.
 - `archive-plan` (reviewer lane) is the only operation that retires a plan: it refuses to run while any task is outstanding, moves the completed plan into a dated `archive/` file, and writes a fresh task-free plan carrying forward only durable context. The new plan contains no status markers.
-- `## Open Questions` and `## Decisions` are append-only and user-owned. Existing entries are not edited, reordered, resolved, or removed by the agents — but `archive-plan` may carry still-relevant entries forward into a fresh plan (renumbered) and drop moot ones, since it is starting a new plan, not editing the live one. An empty section, or one whose only content is a note such as `None.` / `No open questions.`, is fully compliant: agents never flag it, treat it as incomplete, or fill it with placeholders. `## Decisions` is populated only when the user makes, confirms, or ratifies a decision during design or implementation.
+- `## Open Questions` is append-only and user-owned: existing entries are not edited, reordered, resolved, or removed by the agents (only `archive-plan` carries still-open ones forward, renumbered, into a fresh plan). `## Decisions` is the opposite — a **free-form, live** section: it records decisions the user made, confirmed, ratified, or revised during design or implementation, and `review-implementation` (and the user) may freely add, edit, reword, reorganize, or remove its content as decisions evolve. It is not append-only and not a fixed list. Coder-role agents (`implement-*`, `review-iterate`) never edit the plan, but may *suggest* Decisions changes for the user/reviewer to apply. An empty `## Open Questions` or `## Decisions`, or one whose only content is a note such as `None.` / `No open questions.`, is fully compliant: agents never flag it, treat it as incomplete, or fill it with placeholders.
 - Final review output is terse and focused on outstanding work.
 
 ## Plan Contract
@@ -224,7 +224,7 @@ The deployed workflows share these rules:
 <bullets>
 
 ## Decisions
-<numbered list, append-only; may be empty or a "none" note>
+<free-form, live section: decisions the user made/confirmed/ratified/revised during design or implementation; reviewer-maintained, not append-only; may be empty or a "none" note>
 
 ## Open Questions
 <numbered list, append-only; may be empty or a "none" note>
@@ -233,7 +233,7 @@ The deployed workflows share these rules:
 <bullets>
 ```
 
-Phase headings use `## Phase N: <Title>` as the canonical form. Phase numbering is contiguous. `review-and-fix` may add missing structural sections with placeholders, normalize supported style issues, and create a new skeleton plan. A legacy `## Files to Create by Phase` heading is renamed in place to `## Files to Create or Modify by Phase` (a rename, not a duplicate section). It does not rewrite existing non-placeholder content, status markers, or existing `## Decisions` / `## Open Questions` entries, and an empty `## Decisions` or `## Open Questions` (or one that just notes there are none) is compliant — never flagged or auto-filled. `## Decisions` records decisions the user made, confirmed, or ratified during design or implementation; it sits immediately before `## Open Questions` and is append-only and user-owned, exactly like `## Open Questions`.
+Phase headings use `## Phase N: <Title>` as the canonical form. Phase numbering is contiguous. `review-and-fix` may add missing structural sections with placeholders, normalize supported style issues, and create a new skeleton plan. A legacy `## Files to Create by Phase` heading is renamed in place to `## Files to Create or Modify by Phase` (a rename, not a duplicate section). It does not rewrite existing non-placeholder content, status markers, or existing `## Open Questions` entries, and an empty `## Decisions` or `## Open Questions` (or one that just notes there are none) is compliant — never flagged or auto-filled. `## Open Questions` is append-only and user-owned. `## Decisions` is different: a **free-form, live** section recording decisions the user made, confirmed, ratified, or revised during design or implementation. It sits immediately before `## Open Questions`; `review-implementation` and the user may freely add, edit, reword, reorganize, or remove its content as decisions change (it is not append-only). `review-and-fix` only ensures the heading exists and never rewrites its content. Coder-role agents do not edit the plan but may *suggest* Decisions changes.
 
 The deploy script also enforces a minimum plan skeleton:
 

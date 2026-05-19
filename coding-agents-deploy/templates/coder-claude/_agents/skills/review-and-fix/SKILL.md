@@ -68,8 +68,7 @@ flowchart TD
 (repeat per phase)
 
 ## Decisions
-1. **<label>.** <decision the user made, confirmed, or ratified during design or implementation>
-(append-only – existing entries are owned by the user; empty, or a note that there are none, is acceptable)
+<Free-form notes on decisions the user made, confirmed, ratified, or revised during design or implementation. This is a live section: the user and `/review-implementation` may freely add, edit, restructure, or remove entries as decisions evolve. Not append-only and not a fixed numbered list. May be empty or note there are none.>
 
 ## Open Questions
 1. **<label>.** <question>
@@ -104,7 +103,7 @@ Check for each of the following. A finding is **STRUCTURAL** when the implemente
 | Every phase has `### Acceptance Criteria` block with at least one bullet | STRUCTURAL | Reviewer reads this. |
 | `## Files to Create or Modify by Phase` with a `### Phase N` sub-block for each phase | STRUCTURAL | Reviewer checks promised created/modified files exist. |
 | `## Test Plan` with a `### Phase N` sub-block for each phase | STRUCTURAL | Reviewer checks test coverage. |
-| `## Decisions` list (may be empty or a "none" note) | STRUCTURAL | Records user-ratified decisions; append-only. |
+| `## Decisions` section (free-form; may be empty) | STRUCTURAL | Live record of design/implementation decisions; the user and `/review-implementation` maintain it. Not append-only. |
 | `## Open Questions` numbered list (may be empty or a "none" note) | STRUCTURAL | Reviewer appends to this. |
 | `## Residual Risks` bulleted list | STRUCTURAL | Reviewer adds/removes/reword entries. |
 | Phase headings in the form `## Phase N: <Title>` (colon, not dash) | STYLE | Both forms work, but canonical is colon. |
@@ -139,9 +138,9 @@ For every STRUCTURAL finding, write the missing section into the plan **without 
 
 - **Missing `## Test Plan`**: insert with `### Phase N` sub-blocks for every existing phase, each containing a placeholder bullet: `- (List tests this phase ships or unblocks.)`.
 
-- **Missing `## Decisions`**: insert the heading immediately before `## Open Questions` with an empty list (no placeholder content – it starts empty and the user/reviewer appends ratified decisions over time).
+- **Missing `## Decisions`**: insert just the heading immediately before `## Open Questions`, with no content. It is a free-form, live section the user and `/review-implementation` maintain; never add placeholder content, and never treat its content or emptiness as a finding.
 
-- **Missing `## Open Questions`**: insert with the heading and an empty numbered list (no placeholder content – the section starts empty and is appended to over time). An empty `## Open Questions`, or one whose only content is a note such as `None.` / `No open questions.`, is fully compliant: never treat it as a finding, and never "fix" it by inventing placeholder questions. The same applies to `## Decisions`.
+- **Missing `## Open Questions`**: insert with the heading and an empty numbered list (no placeholder content – the section starts empty and is appended to over time). An empty `## Open Questions`, or one whose only content is a note such as `None.` / `No open questions.`, is fully compliant: never treat it as a finding, and never "fix" it by inventing placeholder questions. An empty `## Decisions` is likewise never a finding (it is free-form and maintained by the user and `/review-implementation`).
 
 - **Missing `## Residual Risks`**: insert with the heading and an empty bulleted list.
 
@@ -150,7 +149,7 @@ For every STRUCTURAL finding, write the missing section into the plan **without 
 ### 4. Do NOT touch
 
 - Content of any `### Work`, `### Acceptance Criteria`, `## Definition of Done`, `## Automation Contract`, or `## Residual Risks` entries that already have non-placeholder content.
-- Existing `## Decisions` and `## Open Questions` entries – both sections are append-only and owned by the user. Do not edit, renumber, resolve, or remove entries, and do not flag an empty section or a "none" note as a defect.
+- `## Open Questions` entries – append-only and owned by the user: do not edit, renumber, resolve, or remove them. `## Decisions` is free-form and live (maintained by the user and `/review-implementation`): this command only ensures the heading exists, it does not rewrite or reorder its content either. Never flag an empty `## Decisions` / `## Open Questions` or a "none" note as a defect.
 - Status markers (`✅`, `⚠️`, `⚠`) on phase headings, work bullets, or acceptance-criteria bullets.
 - Checklist syntax (`- [ ]` / `- [x]`) in `### Work` blocks.
 - Design narrative paragraphs within phase sections.
@@ -229,7 +228,7 @@ Before running /implement-phase you should fill in:
 
 - Do not change the content of any non-placeholder bullet.
 - Do not touch status markers or checklist boxes.
-- Do not edit or remove `## Decisions` or `## Open Questions` entries, and do not flag either section as a defect when it is empty or just says there are none.
+- Do not rewrite, reorder, or remove `## Open Questions` (append-only, user-owned) or the `## Decisions` content (free-form, maintained by the user and `/review-implementation`); do not flag either section as a defect when it is empty or just says there are none.
 - Do not rename phases. (Renumbering or retitling phases is the user's call.)
 - Do not delete sections, even ones that don't belong in the canonical list — they may be user-specific additions.
 - Do not commit. The user reviews and commits.

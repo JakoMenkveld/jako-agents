@@ -39,7 +39,7 @@ Implement every artifact under each target phase. Follow `.deployed-agents/conve
 
 Do NOT implement files from phases beyond those specified. Stubs the plan defers to a later phase remain stubs.
 
-Do NOT modify `{{plan_path}}` or related plan/data-model docs. The user owns plan bookkeeping. The reviewer will surface staleness as `[DOC]` findings — relay them verbatim at the end.
+Do NOT modify `{{plan_path}}` or related plan/data-model docs. The user owns plan bookkeeping. The reviewer will surface staleness as `[DOC]` findings — relay them verbatim at the end. The `## Decisions` section is free-form and live: if implementation reveals a decision that should be added or changed, you may *suggest* that edit (state the proposed Decisions wording in your final report for the user/reviewer to apply) — but never edit the plan yourself.
 
 ### 4. Build
 

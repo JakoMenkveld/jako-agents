@@ -37,7 +37,7 @@ If the plan is an untouched skeleton (only placeholder bullets, no completed or 
 
 `{{plan_path}}` is the plan. If no file exists there, report that there is nothing to archive and stop.
 
-Read the whole plan. Note its `# <Title>`, summary/background paragraphs, `## Automation Contract`, `## Definition of Done`, the still-relevant `## Decisions` entries, the still-open `## Open Questions` entries, the still-relevant `## Residual Risks`, and any durable architecture/background narrative that remains true for future work.
+Read the whole plan. Note its `# <Title>`, summary/background paragraphs, `## Automation Contract`, `## Definition of Done`, the `## Decisions` content, the still-open `## Open Questions` entries, the still-relevant `## Residual Risks`, and any durable architecture/background narrative that remains true for future work.
 
 ### 2. Archive the current plan
 
@@ -58,7 +58,7 @@ Create a new `{{plan_path}}` in the canonical structure (the same layout `/revie
 - `## Phase 0: Initial implementation` with `### Work` and `### Acceptance Criteria`, each holding only the parenthetical placeholder bullet (`- (List work items for this phase.)` / `- (List acceptance criteria for this phase.)`). No real tasks.
 - `## Files to Create or Modify by Phase` → `### Phase 0` → `- (List files this phase creates or modifies.)`. If the archived plan used the legacy heading `## Files to Create by Phase`, the fresh plan uses the new name.
 - `## Test Plan` → `### Phase 0` → `- (List tests this phase ships or unblocks.)`.
-- `## Decisions` – copy forward, verbatim and renumbered from 1, only the decisions still relevant to future work; drop ones the archived work made moot. Placed immediately before `## Open Questions`. An empty section, or a note that there are none, is acceptable – never invent entries.
+- `## Decisions` – carry forward the still-relevant decisions, reworded or condensed as needed (it is free-form, not a fixed numbered list); drop what the archived work made moot. Place it immediately before `## Open Questions`. An empty section, or a note that there are none, is acceptable – never invent decisions the user did not make.
 - `## Open Questions` – copy forward, verbatim and renumbered from 1, only the questions that are still genuinely open. Drop ones the archived work resolved. An empty section, or a note such as `None.`, is acceptable – never invent entries.
 - `## Residual Risks` — copy forward only the risks still relevant; drop risks the archived work closed; reword any whose blast radius changed.
 - `## Carried-Forward Context` — **only** when option 2 was chosen (or there is durable architectural context worth keeping). Narrative bullets summarizing unfinished/relevant context for whoever plans the next cycle. Never tasks, checkboxes, or phases.

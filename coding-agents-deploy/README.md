@@ -67,7 +67,8 @@ The templates baked these patterns in:
 - **3-cycle implementer↔reviewer cap** — stop and surface to user.
 - **No status-marker bookkeeping** — implementers/inner reviewers never report or touch the status surface (`[ ]`/`[x]`, headings, `Status:` lines, Phase Status table, Mermaid node icons + `class` lines); `review-implementation` owns and updates all of it.
 - **Non-invasive overlay** — `.deployed-agents/conventions.md` is the deployed agents' source of truth; the project's own `AGENTS.md` / `CLAUDE.md` are never read, written, or merged. Conventions are workflow-scoped, not ambient.
-- **Append-only, user-owned `## Decisions` and `## Open Questions`** in plan reviews; either may be empty or a "none" note (never flagged or auto-filled). `## Decisions` records decisions the user made/confirmed/ratified during design or implementation.
+- **Append-only, user-owned `## Open Questions`** in plan reviews; may be empty or a "none" note (never flagged or auto-filled).
+- **Free-form, live `## Decisions`** section: records decisions the user made/confirmed/ratified/revised during design or implementation. `review-implementation` and the user may freely edit, reword, or remove its content (not append-only); coder-role agents may only *suggest* changes. May be empty or a "none" note.
 - **Terse paragraph reports**, not bulleted task lists, for final review output.
 - **`commit-and-sync` with optional `release` semver auto-bump** (from drydoc).
 

@@ -43,7 +43,7 @@ Implement every artifact listed under each target phase. Follow the project conv
 
 Do NOT implement files from phases beyond those specified. Stubs that the plan says will be wired in a later phase remain stubs (constructor + minimal body, throw `NotImplementedException` if needed).
 
-Do NOT modify `{{plan_path}}` or any other plan/data-model docs. The user owns plan bookkeeping. The reviewer may report documentation staleness as `[DOC]` findings — relay those to the user verbatim at the end.
+Do NOT modify `{{plan_path}}` or any other plan/data-model docs. The user owns plan bookkeeping. The reviewer may report documentation staleness as `[DOC]` findings — relay those to the user verbatim at the end. The `## Decisions` section is free-form and live: if implementation reveals a decision that should be added or changed, you may *suggest* that edit (state the proposed Decisions wording in your final report for the user/reviewer to apply) — but never edit the plan yourself.
 
 ### 4. Build
 
