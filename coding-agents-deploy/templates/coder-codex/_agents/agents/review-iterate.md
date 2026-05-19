@@ -71,3 +71,4 @@ Apply selectively but explicitly — skip an item only when irrelevant.
 - Don't guess at file paths — use `rg`/`Glob` when unsure.
 - Be specific: every finding cites `file:line`.
 - Always include the two collected sections (`[DOC]`, `[SHARED]`) at the end.
+- **Writing style:** never use em dashes (`—`, U+2014) in your report or any text — always use an en dash (`–`, U+2013) instead. New code or docs that introduce an em dash are a MINOR convention finding.

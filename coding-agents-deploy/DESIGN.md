@@ -180,7 +180,7 @@ The deployed workflows share these rules:
 - Passing tests are necessary but not sufficient; reviewers check that tests prove the relevant acceptance criteria.
 - Generic agents do not edit plan status markers. `review-implementation` is the explicit exception and may update markers under its plan write policy.
 - `archive-plan` (reviewer lane) is the only operation that retires a plan: it refuses to run while any task is outstanding, moves the completed plan into a dated `archive/` file, and writes a fresh task-free plan carrying forward only durable context. The new plan contains no status markers.
-- `## Open Questions` is append-only. Existing entries are not edited, reordered, resolved, or removed by the agents — but `archive-plan` may carry still-open entries forward into a fresh plan (renumbered) and drop resolved ones, since it is starting a new plan, not editing the live one.
+- `## Open Questions` and `## Decisions` are append-only and user-owned. Existing entries are not edited, reordered, resolved, or removed by the agents — but `archive-plan` may carry still-relevant entries forward into a fresh plan (renumbered) and drop moot ones, since it is starting a new plan, not editing the live one. An empty section, or one whose only content is a note such as `None.` / `No open questions.`, is fully compliant: agents never flag it, treat it as incomplete, or fill it with placeholders. `## Decisions` is populated only when the user makes, confirms, or ratifies a decision during design or implementation.
 - Final review output is terse and focused on outstanding work.
 
 ## Plan Contract
@@ -215,22 +215,25 @@ The deployed workflows share these rules:
 ### Acceptance Criteria
 <bullets>
 
-## Files to Create by Phase
+## Files to Create or Modify by Phase
 ### Phase N
-<bullets>
+<bullets — files the phase creates or modifies>
 
 ## Test Plan
 ### Phase N
 <bullets>
 
+## Decisions
+<numbered list, append-only; may be empty or a "none" note>
+
 ## Open Questions
-<numbered list, append-only>
+<numbered list, append-only; may be empty or a "none" note>
 
 ## Residual Risks
 <bullets>
 ```
 
-Phase headings use `## Phase N: <Title>` as the canonical form. Phase numbering is contiguous. `review-and-fix` may add missing structural sections with placeholders, normalize supported style issues, and create a new skeleton plan. It does not rewrite existing non-placeholder content, status markers, or existing `## Open Questions` entries.
+Phase headings use `## Phase N: <Title>` as the canonical form. Phase numbering is contiguous. `review-and-fix` may add missing structural sections with placeholders, normalize supported style issues, and create a new skeleton plan. A legacy `## Files to Create by Phase` heading is renamed in place to `## Files to Create or Modify by Phase` (a rename, not a duplicate section). It does not rewrite existing non-placeholder content, status markers, or existing `## Decisions` / `## Open Questions` entries, and an empty `## Decisions` or `## Open Questions` (or one that just notes there are none) is compliant — never flagged or auto-filled. `## Decisions` records decisions the user made, confirmed, or ratified during design or implementation; it sits immediately before `## Open Questions` and is append-only and user-owned, exactly like `## Open Questions`.
 
 The deploy script also enforces a minimum plan skeleton:
 

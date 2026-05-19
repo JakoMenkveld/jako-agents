@@ -1,6 +1,6 @@
 ---
 name: review-and-fix
-description: Create a new implementation plan or audit-and-auto-fix the structure of an existing one at {{plan_path}}. Ensures the plan matches the canonical layout that implement-phase and review-implementation expect (Phase Flow, Recommended Execution Order, Definition of Done, Automation Contract, Files-to-Create-by-phase, Test Plan, Open Questions, Residual Risks, plus per-phase Work and Acceptance Criteria blocks).
+description: Create a new implementation plan or audit-and-auto-fix the structure of an existing one at {{plan_path}}. Ensures the plan matches the canonical layout that implement-phase and review-implementation expect (Phase Flow, Recommended Execution Order, Definition of Done, Automation Contract, Files-to-Create-or-Modify-by-phase, Test Plan, Decisions, Open Questions, Residual Risks, plus per-phase Work and Acceptance Criteria blocks).
 ---
 
 # /review-and-fix
@@ -29,8 +29,8 @@ flowchart TD
 ```
 
 ## Recommended Execution Order
-1. Phase 0 — <title>
-2. Phase 1 — <title>
+1. Phase 0 – <title>
+2. Phase 1 – <title>
 ...
 
 ## Automation Contract
@@ -52,13 +52,13 @@ flowchart TD
 
 (repeat per phase)
 
-## Files to Create by Phase
+## Files to Create or Modify by Phase
 ### Phase 0
 - `path/to/file1`
 - `path/to/file2`
 ### Phase 1
 - `path/to/file3`
-(repeat per phase)
+(repeat per phase; list files the phase creates or modifies)
 
 ## Test Plan
 ### Phase 0
@@ -67,9 +67,13 @@ flowchart TD
 - <test description>
 (repeat per phase)
 
+## Decisions
+1. **<label>.** <decision the user made, confirmed, or ratified during design or implementation>
+(append-only – existing entries are owned by the user; empty, or a note that there are none, is acceptable)
+
 ## Open Questions
 1. **<label>.** <question>
-(append-only — existing entries are owned by the user)
+(append-only – existing entries are owned by the user; empty, or a note such as `None.` / `No open questions.`, is acceptable)
 
 ## Residual Risks
 - <risk 1>
@@ -98,9 +102,10 @@ Check for each of the following. A finding is **STRUCTURAL** when the implemente
 | At least one `## Phase N: <Title>` heading | STRUCTURAL | Plan is useless without phases. |
 | Every phase has `### Work` block with at least one bullet | STRUCTURAL | Implementer reads this. |
 | Every phase has `### Acceptance Criteria` block with at least one bullet | STRUCTURAL | Reviewer reads this. |
-| `## Files to Create by Phase` with a `### Phase N` sub-block for each phase | STRUCTURAL | Reviewer checks promised files exist. |
+| `## Files to Create or Modify by Phase` with a `### Phase N` sub-block for each phase | STRUCTURAL | Reviewer checks promised created/modified files exist. |
 | `## Test Plan` with a `### Phase N` sub-block for each phase | STRUCTURAL | Reviewer checks test coverage. |
-| `## Open Questions` numbered list | STRUCTURAL | Reviewer appends to this. |
+| `## Decisions` list (may be empty or a "none" note) | STRUCTURAL | Records user-ratified decisions; append-only. |
+| `## Open Questions` numbered list (may be empty or a "none" note) | STRUCTURAL | Reviewer appends to this. |
 | `## Residual Risks` bulleted list | STRUCTURAL | Reviewer adds/removes/reword entries. |
 | Phase headings in the form `## Phase N: <Title>` (colon, not dash) | STYLE | Both forms work, but canonical is colon. |
 | Phase numbering is contiguous (0, 1, 2, … no gaps) | STYLE | Gaps confuse readers but don't break the agents. |
@@ -118,7 +123,7 @@ For every STRUCTURAL finding, write the missing section into the plan **without 
   ```
   The user can wire the edges however they want; the section just needs to exist for the reviewer to mark.
 
-- **Missing `## Recommended Execution Order`**: insert a numbered list with one entry per existing phase, in ascending number order. Format: `1. Phase 0 — <title>`.
+- **Missing `## Recommended Execution Order`**: insert a numbered list with one entry per existing phase, in ascending number order. Format: `1. Phase 0 – <title>`.
 
 - **Missing `## Automation Contract`**: insert with a placeholder bullet: `- (Document build/test/CI/environment assumptions here. The implementer reads this before starting.)` — the user fills in the real content.
 
@@ -128,20 +133,24 @@ For every STRUCTURAL finding, write the missing section into the plan **without 
 
 - **Phase missing `### Acceptance Criteria` block**: insert an empty `### Acceptance Criteria` sub-heading after the `### Work` block with a placeholder bullet: `- (List acceptance criteria for this phase.)`.
 
-- **Missing `## Files to Create by Phase`**: insert with `### Phase N` sub-blocks for every existing phase, each containing a placeholder bullet: `- (List files this phase creates.)`.
+- **Legacy `## Files to Create by Phase`**: if the plan still uses the old heading `## Files to Create by Phase`, rename it in place to `## Files to Create or Modify by Phase`, preserving all existing sub-blocks and bullets. This is a rename, not a new section.
+
+- **Missing `## Files to Create or Modify by Phase`**: insert with `### Phase N` sub-blocks for every existing phase, each containing a placeholder bullet: `- (List files this phase creates or modifies.)`.
 
 - **Missing `## Test Plan`**: insert with `### Phase N` sub-blocks for every existing phase, each containing a placeholder bullet: `- (List tests this phase ships or unblocks.)`.
 
-- **Missing `## Open Questions`**: insert with the heading and an empty numbered list (no placeholder content — the section starts empty and is appended to over time).
+- **Missing `## Decisions`**: insert the heading immediately before `## Open Questions` with an empty list (no placeholder content – it starts empty and the user/reviewer appends ratified decisions over time).
+
+- **Missing `## Open Questions`**: insert with the heading and an empty numbered list (no placeholder content – the section starts empty and is appended to over time). An empty `## Open Questions`, or one whose only content is a note such as `None.` / `No open questions.`, is fully compliant: never treat it as a finding, and never "fix" it by inventing placeholder questions. The same applies to `## Decisions`.
 
 - **Missing `## Residual Risks`**: insert with the heading and an empty bulleted list.
 
-- **Missing `### Phase N` sub-block under `## Files to Create by Phase` or `## Test Plan`**: insert with the placeholder bullet shown above for that phase number.
+- **Missing `### Phase N` sub-block under `## Files to Create or Modify by Phase` or `## Test Plan`**: insert with the placeholder bullet shown above for that phase number.
 
 ### 4. Do NOT touch
 
 - Content of any `### Work`, `### Acceptance Criteria`, `## Definition of Done`, `## Automation Contract`, or `## Residual Risks` entries that already have non-placeholder content.
-- Existing `## Open Questions` entries — that section is append-only and owned by the user.
+- Existing `## Decisions` and `## Open Questions` entries – both sections are append-only and owned by the user. Do not edit, renumber, resolve, or remove entries, and do not flag an empty section or a "none" note as a defect.
 - Status markers (`✅`, `⚠️`, `⚠`) on phase headings, work bullets, or acceptance-criteria bullets.
 - Checklist syntax (`- [ ]` / `- [x]`) in `### Work` blocks.
 - Design narrative paragraphs within phase sections.
@@ -165,7 +174,7 @@ Plan audited: {{plan_path}}
 Structural fixes applied:
   - Added ## Definition of Done (placeholder content)
   - Added ### Work block under Phase 3
-  - Added ### Phase 2 under ## Files to Create by Phase (placeholder content)
+  - Added ### Phase 2 under ## Files to Create or Modify by Phase (placeholder content)
 
 Style fixes applied:
   - (none)
@@ -189,7 +198,7 @@ Ask the user (in a single bundled question if possible — Cowork's AskUserQuest
 - A one-paragraph summary of what's being built and why.
 - A rough list of phase titles (numbered from 0 or 1). The user may say "I don't know yet — propose some" — in that case, propose 3-5 plausible phases based on the project name and stack from `.deployed-agents/conventions.md`, then ask for sign-off.
 
-Do NOT ask the user to fill in `### Work`, `### Acceptance Criteria`, `## Files to Create by Phase`, `## Test Plan`, `## Definition of Done`, or `## Automation Contract` content interactively — those go in as placeholders that the user fills in afterwards. The goal of create mode is to lay down a compliant skeleton, not to extract a detailed plan from the user in one shot.
+Do NOT ask the user to fill in `### Work`, `### Acceptance Criteria`, `## Files to Create or Modify by Phase`, `## Test Plan`, `## Definition of Done`, or `## Automation Contract` content interactively – those go in as placeholders that the user fills in afterwards. The goal of create mode is to lay down a compliant skeleton, not to extract a detailed plan from the user in one shot.
 
 ### 3. Generate the plan file
 
@@ -199,9 +208,9 @@ Write `{{plan_path}}` with the canonical structure described at the top of this 
 - Summary paragraph — verbatim from the user's input.
 - `## Phase Flow` — mermaid flowchart with one node per phase in linear order (P0 → P1 → P2 → …).
 - `## Recommended Execution Order` — numbered list of phase titles.
-- Every phase heading, `### Work` block, `### Acceptance Criteria` block, `### Phase N` sub-blocks under `## Files to Create by Phase` and `## Test Plan` — populated with the placeholder bullets shown in the auto-fix section.
-- `## Definition of Done`, `## Automation Contract` — placeholder bullets.
-- `## Open Questions`, `## Residual Risks` — empty.
+- Every phase heading, `### Work` block, `### Acceptance Criteria` block, `### Phase N` sub-blocks under `## Files to Create or Modify by Phase` and `## Test Plan` – populated with the placeholder bullets shown in the auto-fix section.
+- `## Definition of Done`, `## Automation Contract` – placeholder bullets.
+- `## Decisions`, `## Open Questions`, `## Residual Risks` – empty.
 
 ### 4. Report
 
@@ -220,7 +229,7 @@ Before running /implement-phase you should fill in:
 
 - Do not change the content of any non-placeholder bullet.
 - Do not touch status markers or checklist boxes.
-- Do not edit or remove `## Open Questions` entries.
+- Do not edit or remove `## Decisions` or `## Open Questions` entries, and do not flag either section as a defect when it is empty or just says there are none.
 - Do not rename phases. (Renumbering or retitling phases is the user's call.)
 - Do not delete sections, even ones that don't belong in the canonical list — they may be user-specific additions.
 - Do not commit. The user reviews and commits.

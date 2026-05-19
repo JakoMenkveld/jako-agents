@@ -736,13 +736,15 @@ def plan_skeleton(info: dict) -> str:
         "- (List the exit criteria for the whole plan.)\n"
         "\n"
         + starter_phase_block()
-        + "## Files to Create by Phase\n"
+        + "## Files to Create or Modify by Phase\n"
         "### Phase 0\n"
-        "- (List files this phase creates.)\n"
+        "- (List files this phase creates or modifies.)\n"
         "\n"
         "## Test Plan\n"
         "### Phase 0\n"
         "- (List tests this phase ships or unblocks.)\n"
+        "\n"
+        "## Decisions\n"
         "\n"
         "## Open Questions\n"
         "\n"
@@ -836,6 +838,18 @@ def repair_plan_text(text: str, info: dict) -> tuple[str, list[str]]:
         text = f"# {info['project_name']} Implementation Plan\n\n" + text.lstrip()
         changes.append("Added top-level title")
 
+    # Legacy migration: the section formerly named "Files to Create by Phase"
+    # now also tracks files a phase modifies. Rename in place so existing plans
+    # are upgraded rather than gaining a second, empty section.
+    renamed, n = re.subn(
+        r"(?m)^##\s+Files to Create by Phase\s*$",
+        "## Files to Create or Modify by Phase",
+        text,
+    )
+    if n:
+        text = renamed
+        changes.append("Renamed ## Files to Create by Phase to ## Files to Create or Modify by Phase")
+
     phases = parse_phases(text)
     if not phases:
         text = text.rstrip() + "\n\n" + starter_phase_block()
@@ -872,13 +886,13 @@ def repair_plan_text(text: str, info: dict) -> tuple[str, list[str]]:
     changes.extend(subsection_changes)
     phases = parse_phases(text)
 
-    if not has_top_section(text, "Files to Create by Phase"):
+    if not has_top_section(text, "Files to Create or Modify by Phase"):
         body = "".join(
-            f"### Phase {phase.number}\n- (List files this phase creates.)\n\n"
+            f"### Phase {phase.number}\n- (List files this phase creates or modifies.)\n\n"
             for phase in sorted(phases, key=lambda p: p.number)
         )
-        text = text.rstrip() + "\n\n" + plan_tail_block("Files to Create by Phase", body)
-        changes.append("Added ## Files to Create by Phase")
+        text = text.rstrip() + "\n\n" + plan_tail_block("Files to Create or Modify by Phase", body)
+        changes.append("Added ## Files to Create or Modify by Phase")
     if not has_top_section(text, "Test Plan"):
         body = "".join(
             f"### Phase {phase.number}\n- (List tests this phase ships or unblocks.)\n\n"
@@ -889,6 +903,16 @@ def repair_plan_text(text: str, info: dict) -> tuple[str, list[str]]:
     if not has_top_section(text, "Open Questions"):
         text = text.rstrip() + "\n\n## Open Questions\n"
         changes.append("Added ## Open Questions")
+    if not has_top_section(text, "Decisions"):
+        # Decisions sits immediately before Open Questions. An empty section is
+        # acceptable; it is populated only when the user ratifies a decision.
+        oq = re.search(r"(?m)^##\s+Open Questions\s*$", text)
+        decisions_block = "## Decisions\n\n"
+        if oq:
+            text = text[: oq.start()] + decisions_block + text[oq.start() :]
+        else:
+            text = text.rstrip() + "\n\n## Decisions\n"
+        changes.append("Added ## Decisions")
     if not has_top_section(text, "Residual Risks"):
         text = text.rstrip() + "\n\n## Residual Risks\n"
         changes.append("Added ## Residual Risks")
@@ -896,9 +920,9 @@ def repair_plan_text(text: str, info: dict) -> tuple[str, list[str]]:
     phases = parse_phases(text)
     text, subblock_changes = ensure_phase_subblocks(
         text,
-        "Files to Create by Phase",
+        "Files to Create or Modify by Phase",
         phases,
-        "(List files this phase creates.)",
+        "(List files this phase creates or modifies.)",
     )
     changes.extend(subblock_changes)
     text, subblock_changes = ensure_phase_subblocks(

@@ -161,8 +161,10 @@ class PlanRepairTests(unittest.TestCase):
         self.assertIn("## Recommended Execution Order", repaired)
         self.assertIn("## Automation Contract", repaired)
         self.assertIn("## Definition of Done", repaired)
-        self.assertIn("## Files to Create by Phase", repaired)
+        self.assertIn("## Files to Create or Modify by Phase", repaired)
+        self.assertNotIn("## Files to Create by Phase", repaired)
         self.assertIn("## Test Plan", repaired)
+        self.assertIn("## Decisions", repaired)
         self.assertIn("### Phase 0", repaired)
         self.assertIn("### Phase 1", repaired)
         self.assertIn("1. Keep this question exactly.", repaired)
@@ -171,11 +173,61 @@ class PlanRepairTests(unittest.TestCase):
             repaired.index("### Acceptance Criteria", repaired.index("## Phase 1")),
             repaired.index("## Open Questions"),
         )
+        # Decisions sits immediately before Open Questions.
+        self.assertLess(
+            repaired.index("## Decisions"),
+            repaired.index("## Open Questions"),
+        )
         self.assertNotIn(
             "### Acceptance Criteria\n- (List acceptance criteria for this phase.)\n\n## Custom Notes",
             repaired,
         )
         self.assertIn("Added ### Acceptance Criteria under Phase 1", changes)
+
+    def test_repair_renames_legacy_files_section_in_place(self) -> None:
+        info = {
+            "project_name": "Beta",
+            "build_cmd": "make build",
+            "test_cmd": "make test",
+        }
+        original = (
+            "# Beta Implementation Plan\n"
+            "\n"
+            "Summary.\n"
+            "\n"
+            "## Phase 0: Setup\n"
+            "\n"
+            "### Work\n"
+            "- Work item.\n"
+            "\n"
+            "### Acceptance Criteria\n"
+            "- Criterion.\n"
+            "\n"
+            "## Files to Create by Phase\n"
+            "### Phase 0\n"
+            "- src/keep_me.py\n"
+            "\n"
+            "## Open Questions\n"
+        )
+
+        repaired, changes = deploy.repair_plan_text(original, info)
+
+        # Renamed in place, not duplicated, and existing content preserved.
+        self.assertNotIn("## Files to Create by Phase", repaired)
+        self.assertEqual(
+            repaired.count("## Files to Create or Modify by Phase"), 1
+        )
+        self.assertIn("- src/keep_me.py", repaired)
+        self.assertIn(
+            "Renamed ## Files to Create by Phase to ## Files to Create or Modify by Phase",
+            changes,
+        )
+        # Decisions inserted before the pre-existing Open Questions section.
+        self.assertIn("## Decisions", repaired)
+        self.assertLess(
+            repaired.index("## Decisions"),
+            repaired.index("## Open Questions"),
+        )
 
 
 class GitignoreTests(unittest.TestCase):

@@ -15,16 +15,17 @@ Review one or more {{project_name}} implementation phases end to end, update `{{
 - The `## Phase Flow` Mermaid graph — **both** the status icon embedded in the node label (e.g. `P3[Phase 3: … ⬜]` → `… ✅`) **and** the matching classification line (e.g. `class P3 pending` → `class P3 done`). Keep the node label, the `class` line, and the diagram's own `classDef` names consistent with each other. Also update edge labels.
 - A `## Phase Status` table (or any phase status/summary table): the Status cell of each reviewed phase's row.
 - A per-phase `Status:` line directly beneath the phase heading.
-- Task/checklist checkboxes (`- [ ]` → `- [x]`) and `## Files to Create` / file-inventory bullets for the reviewed phase — flip an individual item only when that specific item is verified complete in code.
+- Task/checklist checkboxes (`- [ ]` → `- [x]`) and `## Files to Create or Modify` / file-inventory bullets for the reviewed phase – flip an individual item only when that specific item is verified complete in code.
 - Concise partial-reason notes inside the bracketed marker, e.g. `⚠️ [partial: SetMeasures fixed but tests pending]`.
-- `## Open Questions`: **append-only**. Add new questions to the bottom of the numbered list. Do NOT edit, renumber, mark, resolve, remove, or move existing entries — the user resolves Open Questions manually.
+- `## Decisions`: **append-only**. Append a decision here only when the user explicitly made, confirmed, or ratified it during this review. Do NOT edit, renumber, resolve, remove, or move existing entries – the user owns them. An empty `## Decisions`, or one that just notes there are none, is correct and must never be flagged or "filled in".
+- `## Open Questions`: **append-only**. Add new questions to the bottom of the numbered list. Do NOT edit, renumber, mark, resolve, remove, or move existing entries – the user resolves Open Questions manually. An empty `## Open Questions`, or one whose only content is a note such as `None.` / `No open questions.`, is fully acceptable: it is never a finding and never blocks phase completion. Append only a genuine new question.
 - `## Residual Risks`: add new items raised during the review, remove risks resolved by shipped code, re-word risks whose blast radius has changed.
 
 **Use the plan's own status vocabulary.** If the plan declares a legend — a `Legend:` line, a status-table legend, or Mermaid `classDef` names like `done`/`inProgress`/`pending`/`blocked` — match it exactly (icons *and* class names; e.g. `🟡 in-progress` and `class P1 inProgress`, not `⚠️`). Only when the plan declares no vocabulary, default to `✅` complete / `⚠️ [partial: reason]` / unmarked. Every surface above must end the review agreeing with every other surface and with the code.
 
 **Disallowed edits:**
 - Adding new phase sections, renaming phases, rewriting acceptance-criteria text, moving text between phases, or changing any non-marker plan content. If the plan is structurally stale, report that to the user instead of restructuring it.
-- Editing, renumbering, resolving, or removing any existing `## Open Questions` entry.
+- Editing, renumbering, resolving, or removing any existing `## Decisions` or `## Open Questions` entry, or flagging either section as a defect when it is empty or notes there are none.
 
 Status icons:
 - `✅` — complete.
@@ -72,13 +73,13 @@ Repository root is the current workspace. Plan file: `{{plan_path}}`.
 5. **Update the full status surface in `{{plan_path}}`** before final reporting (use the plan's own legend — see Plan Write Policy):
    - For each reviewed phase, mark `### Work` bullets done only when the change exists and is correct. Partial marker for partial items. Unmarked for missing.
    - For each reviewed phase, mark `### Acceptance Criteria` bullets done only when met and verifiable now.
-   - Flip task/checklist checkboxes (`- [ ]` → `- [x]`) and `## Files to Create` / file-inventory bullets only for items individually verified complete.
+   - Flip task/checklist checkboxes (`- [ ]` → `- [x]`) and `## Files to Create or Modify` / file-inventory bullets only for items individually verified complete.
    - Mark the phase heading and any per-phase `Status:` line done only when every `### Work` bullet, `### Acceptance Criteria` bullet, and tracked checkbox/file for that phase is done. Partial/in-progress marker otherwise.
    - Update the `## Phase Status` table (or any status/summary table): set each reviewed phase's Status cell to match its heading.
    - In the `## Phase Flow` Mermaid graph, update **both** the icon in the phase's node label **and** its `class <node> <className>` line so they agree. When a phase is fully done, also update every inbound/outbound edge whose connected nodes are both done.
    - In `## Recommended Execution Order`, apply the same markers.
    - Apply markers to every other reference to the reviewed phase elsewhere in the plan.
-   - Walk `## Open Questions` (append-only) and `## Residual Risks` (add/remove/reword) per the policy above.
+   - Walk `## Decisions` and `## Open Questions` (both append-only) and `## Residual Risks` (add/remove/reword) per the policy above. Leaving `## Decisions` or `## Open Questions` empty (or as a "none" note) is correct when nothing arose – do not add placeholder content.
 
 6. **Run verification**: `{{build_cmd}}` always; `{{test_cmd}}` when tests exist. **Passing tests are necessary but not sufficient** — confirm the tests actually prove each acceptance criterion, not just that they execute. A test whose name implies coverage but whose body doesn't exercise the claimed behavior is a finding. Record which phases the verification covered.
 
@@ -96,7 +97,7 @@ Use selectively but explicitly; skip items only when irrelevant.
 - **Race conditions / transactions** where the phase owns write behavior.
 - **Tests.** New behaviour has a test. Test names match what the body asserts.
 - **Documentation.** Stale supporting-docs text → `DOC` finding. Flag the drift; do not silently rewrite.
-- **Open Questions and Residual Risks.** Append questions surfaced by the review; update risks per the policy.
+- **Decisions, Open Questions, and Residual Risks.** Append questions surfaced by the review to `## Open Questions`; append user-ratified decisions to `## Decisions`. An empty `## Open Questions` or `## Decisions` (or a "none" note) is acceptable and never a finding. Update risks per the policy.
 
 ## Completion Rules
 

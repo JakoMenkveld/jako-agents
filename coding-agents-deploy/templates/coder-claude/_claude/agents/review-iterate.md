@@ -86,3 +86,4 @@ MINOR  [SHARED] src/web/SearchableList.razor — wraps Shared.UI's NavList only 
 - Don't guess at file paths — use Glob/Grep when unsure.
 - Be specific: every finding cites a file path and line number.
 - Always include the two collected sections (`[DOC]`, `[SHARED]`) at the end, even when the review is otherwise clean.
+- **Writing style:** never use em dashes (`—`, U+2014) in your report or any text — always use an en dash (`–`, U+2013) instead. New code or docs that introduce an em dash are a MINOR convention finding.

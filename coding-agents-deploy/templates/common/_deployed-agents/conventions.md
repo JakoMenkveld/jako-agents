@@ -43,6 +43,10 @@ Running the test suite from an implementer is wasted work — it re-runs on ever
 
 {{conventions_block}}
 
+## Writing style
+
+- **Never use em dashes.** Do not emit the em dash character (`—`, U+2014) anywhere — not in code comments, identifiers, commit messages, the plan, docs, reports, or any other prose you write or edit. Always use an en dash (`–`, U+2013) instead. This applies to every agent and every artifact, including plan sections this overlay generates. When rewording is cleaner than a dash, prefer that; otherwise use the en dash.
+
 ## Severity tags for findings
 
 Reviewers use these levels — apply them to your own self-checks too.
