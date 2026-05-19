@@ -25,7 +25,7 @@ List the findings to the user so they can confirm before you proceed, noting whe
 
 `git fetch origin && git status --short --untracked-files=all`. Untracked files belong to someone — note them but don't revert them.
 
-- **Origin ahead, no work in progress**: `git pull --rebase origin main` and continue.
+- **Origin ahead, no work in progress**: `git pull --rebase origin <current-branch>` and continue (the branch you are on; this overlay never assumes `main`).
 - **Origin ahead, work in progress**: stop and surface the divergence to the user.
 - **Dirty worktree with unrelated user changes**: do not revert user changes. Work around them. If they actively block the fixes, report a blocker.
 
