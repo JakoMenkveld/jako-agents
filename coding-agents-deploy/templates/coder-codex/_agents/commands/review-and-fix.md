@@ -165,24 +165,27 @@ If the plan was already STRUCTURAL-clean, also apply STYLE fixes:
 
 ### 6. Report
 
-Summarize what was changed. Format:
+Report **only what was wrong and what you changed**. Never narrate the plan's structure, never list sections that were already present, and never affirm that the plan matches the canonical structure when nothing was wrong. Omit any subsection whose list would be empty – do not print `(none)` placeholders or empty headings.
 
-```
-Plan audited: {{plan_path}}
+- **Structural fixes were applied** – list them, then the trailing placeholder note:
 
-Structural fixes applied:
-  - Added ## Definition of Done (placeholder content)
-  - Added ### Work block under Phase 3
-  - Added ### Phase 2 under ## Files to Create or Modify by Phase (placeholder content)
+  ```
+  Plan audited: {{plan_path}}
 
-Style fixes applied:
-  - (none)
+  Structural fixes applied:
+    - Added ## Definition of Done (placeholder content)
+    - Added ### Work block under Phase 3
 
-Style findings NOT auto-fixed (user discretion):
-  - Phase 4 and Phase 5 are both numbered "5"
+  The plan now matches the canonical structure expected by /implement-phase and /review-implementation. Placeholder bullets are marked with parentheses – fill them in before running the implementer.
+  ```
 
-The plan now matches the canonical structure expected by /implement-phase and /review-implementation. Placeholder bullets are marked with parentheses — fill them in before running the implementer.
-```
+- **Only style fixes or un-auto-fixed style findings** (no structural problems) – report just those, under their own heading. A duplicate-numbered phase or similar finding is a real problem: surface it.
+
+- **Plan already fully compliant** (no structural problems, no style fixes, no style findings) – output exactly this one line and nothing else. No structure narration, no section inventory, no canonical-structure affirmation, no placeholder note:
+
+  ```
+  Plan audited: {{plan_path}}: already compliant, no changes.
+  ```
 
 ## Create mode
 
