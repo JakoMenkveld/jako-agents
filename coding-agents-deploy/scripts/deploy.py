@@ -62,6 +62,27 @@ def is_tracked_workflow(rel: Path) -> bool:
     return rel.stem in TRACKED_WORKFLOW_NAMES or any(
         part in TRACKED_WORKFLOW_NAMES for part in rel.parts
     )
+
+
+def is_settings_file(rel: Path) -> bool:
+    """Claude/Codex *settings* files are owned by the user and project, not the
+    deploy. They are never created, replaced, merged, promoted, or written into
+    the managed .gitignore block — they are left exactly as found (or absent).
+    Only settings/config is excluded; behavioural agent files stay managed.
+    Matches `.claude/settings*.json` (incl. settings.local.json) and anything
+    under a `.codex/` directory."""
+    parts = rel.parts
+    if ".codex" in parts:
+        return True
+    if parts and parts[0] == ".claude":
+        name = rel.name
+        if name == "settings.json" or (
+            name.startswith("settings.") and name.endswith(".json")
+        ):
+            return True
+    return False
+
+
 GITIGNORE_BEGIN = "# >>> coding-agents (managed by deploy.py) — do not edit inside this block >>>"
 GITIGNORE_END = "# <<< coding-agents (managed by deploy.py) <<<"
 
@@ -225,8 +246,13 @@ def iter_template_files(root: Path):
     """Yield (relative_path_in_target, absolute_path_in_template) for every file under root."""
     for p in sorted(root.rglob("*")):
         if p.is_file():
-            rel = p.relative_to(root)
-            yield translate_path(rel), p
+            rel = translate_path(p.relative_to(root))
+            if is_settings_file(rel):
+                # Settings/config is the user's, never the deploy's. Excluding it
+                # here keeps it out of deployment, .gitignore management, and the
+                # rendered-paths set in one place.
+                continue
+            yield rel, p
 
 
 def normalize_heading(title: str) -> str:
@@ -477,6 +503,11 @@ def write_project_file(
     no_backup: bool,
     summary: list[str],
 ) -> None:
+    if is_settings_file(rel):
+        # Invariant safety net: the deploy never writes a Claude/Codex settings
+        # file even if some future path reaches here. Enumeration already
+        # excludes these; this guarantees the rule holds.
+        return
     if dest.exists() and normalize_text_for_compare(read_text(dest)) == normalize_text_for_compare(text):
         summary.append(f"  {'UNCHANGED':<35} {rel}")
         return
@@ -550,14 +581,16 @@ def iter_managed_project_files(target: Path) -> list[Path]:
             continue
         for path in sorted(root.rglob("*")):
             if path.is_file() and ".bak." not in path.name:
-                files.append(path.relative_to(target))
+                rel = path.relative_to(target)
+                if is_settings_file(rel):
+                    continue
+                files.append(rel)
     return files
 
 
 def choose_template_root_for_project_file(skill_root: Path, role: str, rel: Path) -> Path:
     if (
         rel in MANAGED_TOP_LEVEL_FILES
-        or rel == Path(".claude/settings.json")
         or rel == Path(".claude/commands/commit-and-sync.md")
     ):
         return skill_root / "templates" / "common"

@@ -7,10 +7,10 @@ Canonical reference for the current `deploy-coding-agents` skill. This document 
 `deploy-coding-agents` installs a coordinated Claude + Codex coding-agent setup into a target project as a **non-invasive overlay**. Given a target path and role assignment, it renders or merges:
 
 - `.deployed-agents/conventions.md` — the single source of truth for the deployed agents
-- `.claude/` commands, agents, and settings
+- `.claude/` commands and agents
 - `.agents/` commands, agents, skills, and skill manifests
 
-It deliberately writes **no** root-level files. The project's own `AGENTS.md` / `CLAUDE.md` are never read, written, backed up, or merged — the overlay sits entirely within its own gitignored scaffolding dirs. Conventions are workflow-scoped (loaded when a deployed command runs) rather than ambient, which is the explicit trade-off for not touching the developer's setup.
+It deliberately writes **no** root-level files, and **no settings/config files**. The project's own `AGENTS.md` / `CLAUDE.md` are never read, written, backed up, or merged, and Claude/Codex settings (`.claude/settings*.json`, anything under `.codex/`) are never created, replaced, merged, promoted, or `.gitignore`-managed — they are owned by the user and project and left exactly as found. The overlay sits entirely within its own gitignored scaffolding dirs. Conventions are workflow-scoped (loaded when a deployed command runs) rather than ambient, which is the explicit trade-off for not touching the developer's setup.
 
 The rendered output is tailored with detected stack information, build/test commands, the implementation-plan path, and stack-specific conventions.
 
@@ -32,7 +32,6 @@ C:\vsprojects\jako-agents\
     templates\
       common\
         _deployed-agents\conventions.md
-        _claude\settings.json
         _claude\commands\commit-and-sync.md
       coder-claude\
         _claude\agents\review-iterate.md

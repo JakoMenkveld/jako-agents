@@ -35,7 +35,7 @@ deploy-coding-agents/
     detect_stack.py         # inspects target project, emits JSON
     deploy.py               # renders/merges templates, manages plan file, prints summary
   templates/
-    common/                 # _deployed-agents/conventions.md, .claude/settings.json
+    common/                 # _deployed-agents/conventions.md, .claude/commands/commit-and-sync.md
     coder-claude/           # role: Claude codes, Codex reviews (+ review-and-fix in both lanes)
     coder-codex/            # role: Codex codes, Claude reviews (+ review-and-fix in both lanes)
   conventions/              # per-stack convention blocks (dotnet/typescript/python/go/generic)
