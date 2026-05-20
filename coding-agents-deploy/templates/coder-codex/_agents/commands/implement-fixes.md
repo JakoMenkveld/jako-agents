@@ -70,9 +70,19 @@ git commit -m "Apply fixes: <short summary>"
 
 No `git add -A`. No `--no-verify`. Do not push.
 
-### 8. Capture lessons learned
+### 8. Update this command, implement-phase, and review-iterate (mandatory last step before reporting)
 
-Reflect on patterns that emerged this run. If anything is generally useful, update this command file, the sibling `implement-phase` command (keep the two in sync where they overlap), and the `review-iterate` agent checklist. The `.agents/` directory is gitignored, so these updates stay local — they won't appear in the commit, but they persist for future sessions in this project.
+Look back at the run that just finished. Edit the overlay files IN PLACE before you write your final report — this is what keeps the next run shorter than this one. Triggers:
+
+- **Reviewer re-flagged the same finding across two+ cycles** → update `.agents/agents/review-iterate.md` to call it out as a first-pass check, OR update this command's expectations so the implementer catches it before the first review spawn.
+- **Reviewer surfaced a NEW class of finding only in a later cycle** (e.g. abbreviations flagged piecemeal across passes) → update `review-iterate.md` to require an EXHAUSTIVE sweep of that class on the first pass.
+- **Reviewer summarised "Review complete – clean" while also listing new MINORs** → tighten the "clean means clean" rule in `review-iterate.md`.
+- **Reviewer misclassified a DOC-only item as MAJOR/BLOCKER** → tighten the DOC-vs-code-severity guidance in `review-iterate.md`.
+- **A specific recurring fix, convention, or unclear step** → encode it here, in `implement-phase.md`, or in `review-iterate.md`'s checklist as appropriate.
+
+Keep `implement-fixes.md` and `implement-phase.md` in sync where they overlap (review loop, severity protocol, commit protocol). Targets are the local `.agents/` files (gitignored, persist for this project). If the source-of-truth templates outside the repo are accessible, mirror the changes there too so the next deploy carries them.
+
+This step is **mandatory** before reporting. If nothing is genuinely worth changing, say so explicitly in the report ("no overlay updates this run") so it's a deliberate decision, not an oversight.
 
 ### 9. Report
 
