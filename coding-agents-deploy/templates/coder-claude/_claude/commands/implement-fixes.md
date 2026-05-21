@@ -45,6 +45,12 @@ Do NOT modify `{{plan_path}}` or related plan/data-model docs. The reviewer may 
 
 Reach this step only once every finding is applied (step 3 gate). Iterate build → fix until clean. Do NOT run tests — that's the reviewer's job.
 
+**Pre-review self-sweep (before spawning the reviewer).** The reviewer's convergence-discipline rules forbid surfacing new instances of the same finding-class across multiple cycles, but the implementer can pre-empt entire sweep classes here:
+
+- **Naming sweep.** Grep every file the fixes touched for single-letter callback params and accumulator pairs: `\.(find|filter|map|some|every)\(\([a-z]\)`, `\.(reduce|sort)\(\([a-z],\s*[a-z]\)`, plus the project's banned short-name list (`arr`, `obj`, `val`, `tmp`, `idx`, `cnt`, `cfg`, `opts`, `ctx`, `len`, `cur`, `buf`, `ret`, `dst`, `src`, `fn`, `cb`, `prev`).
+- **Dead export sweep.** Grep the repo for every `module.exports` (or equivalent) key in new/changed modules. Drop or document any export with no consumer.
+- **Bare config-literal sweep.** In every file the plan calls config-driven, grep for bare numeric literals (≥2 digits, excluding 0/1) and confirm each one comes from a constants module / a request-time argument / has a comment explaining why it cannot live in config.
+
 ### 5. Spawn the reviewer
 
 Spawn the `review-iterate` agent (`.claude/agents/review-iterate.md`). Prompt:

@@ -53,6 +53,14 @@ Do NOT modify `{{plan_path}}` or any other plan/data-model docs. The user owns p
 
 Reach this step only once the phase is fully implemented (step 3 gate). Fix every compilation error before proceeding. Iterate build → fix until clean. Do NOT run tests at this stage — the review-iterate agent is responsible for testing.
 
+**Pre-review self-sweep (before spawning the reviewer for the first time).** The reviewer's convergence-discipline rules forbid surfacing new instances of the same finding-class across multiple cycles, but the implementer can pre-empt entire sweep classes by doing them here once:
+
+- **Naming sweep.** Grep every file the phase touched for single-letter callback params and accumulator pairs the reviewer's abbreviation list flags: `\.(find|filter|map|some|every)\(\([a-z]\)`, `\.(reduce|sort)\(\([a-z],\s*[a-z]\)`, plus the project's banned short-name list (`arr`, `obj`, `val`, `tmp`, `idx`, `cnt`, `cfg`, `opts`, `ctx`, `len`, `cur`, `buf`, `ret`, `dst`, `src`, `fn`, `cb`, `prev`). Rename in one pass.
+- **Dead export sweep.** For every new module the phase introduced, grep the repo for each `module.exports` (or equivalent) key. Drop or document any export with no consumer.
+- **Bare config-literal sweep.** For every file the plan calls config-driven (engine/algorithm modules), grep for bare numeric literals (≥2 digits, excluding 0/1) and confirm each one comes from a constants module / a request-time argument / has a comment explaining why it cannot live in config.
+
+These checks duplicate the reviewer's first-pass sweeps; doing them here means the reviewer reports zero of them on cycle 1 instead of trickling them across cycles 3–8.
+
 ### 5. Spawn the reviewer (read-only audit)
 
 Spawn the `review-iterate` agent (`.claude/agents/review-iterate.md`). Use this prompt:
