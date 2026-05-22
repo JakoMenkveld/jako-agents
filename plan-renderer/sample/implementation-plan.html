@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-omnis-palette="black-silver">
 <head>
-  <!-- baked from implementation-plan.md + implementation-plan.progress.json at 2026-05-22T14:05:37Z -->
+  <!-- baked from implementation-plan.md + implementation-plan.progress.json at 2026-05-22T17:28:26Z -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Plan Renderer</title>
@@ -511,18 +511,30 @@ main {
 .item {
   display: grid;
   grid-template-columns: 14px 32px 1fr auto;
+  grid-template-areas:
+    "dot id  text chip"
+    ".   .   note note";
   align-items: start;
-  gap: 8px;
+  gap: 2px 8px;
   padding: 6px 8px;
   border-radius: 4px;
 }
 .item:hover { background: var(--surface); }
 .item-state-dot {
+  grid-area: dot;
   width: 8px; height: 8px;
   border-radius: 50%;
   margin-top: 6px;
   background: var(--state-pending-text);
   opacity: .6;
+}
+.item-id { grid-area: id; }
+.item-text { grid-area: text; }
+.item-note { grid-area: note; }
+.item > .chip {
+  grid-area: chip;
+  align-self: start;
+  white-space: nowrap;
 }
 .item-pending .item-state-dot { background: var(--state-pending-text); opacity: .35; }
 .item-in-progress .item-state-dot { background: var(--state-active-text); animation: pulse 1.6s ease-in-out infinite; }
@@ -1069,7 +1081,7 @@ _(none – telemetry/log/blob architecture is intentionally stubbed and deferred
   }
 }
 </script>
-  <script id="plan-bake-meta" type="application/json">{"baked_at": "2026-05-22T14:05:37Z", "plan": "implementation-plan.md", "progress": "implementation-plan.progress.json"}</script>
+  <script id="plan-bake-meta" type="application/json">{"baked_at": "2026-05-22T17:28:26Z", "plan": "implementation-plan.md", "progress": "implementation-plan.progress.json"}</script>
   <script id="renderer-js">// plan-renderer: turn a Plan-Contract markdown + a progress.json overlay
 // into a structured, interactive HTML view.
 //

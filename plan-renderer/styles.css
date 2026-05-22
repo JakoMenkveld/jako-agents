@@ -362,18 +362,30 @@ main {
 .item {
   display: grid;
   grid-template-columns: 14px 32px 1fr auto;
+  grid-template-areas:
+    "dot id  text chip"
+    ".   .   note note";
   align-items: start;
-  gap: 8px;
+  gap: 2px 8px;
   padding: 6px 8px;
   border-radius: 4px;
 }
 .item:hover { background: var(--surface); }
 .item-state-dot {
+  grid-area: dot;
   width: 8px; height: 8px;
   border-radius: 50%;
   margin-top: 6px;
   background: var(--state-pending-text);
   opacity: .6;
+}
+.item-id { grid-area: id; }
+.item-text { grid-area: text; }
+.item-note { grid-area: note; }
+.item > .chip {
+  grid-area: chip;
+  align-self: start;
+  white-space: nowrap;
 }
 .item-pending .item-state-dot { background: var(--state-pending-text); opacity: .35; }
 .item-in-progress .item-state-dot { background: var(--state-active-text); animation: pulse 1.6s ease-in-out infinite; }
