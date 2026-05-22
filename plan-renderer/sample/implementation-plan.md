@@ -9,9 +9,6 @@ flowchart TD
     P1 --> P2["Phase 2: Node detail popout + disabled external detail fetch"]
     P2 --> P3["Phase 3: Live SSE projection updates and polish"]
 
-    classDef done fill:#1A7048,stroke:#0E5030,color:#FFFFFF
-    classDef current fill:#A01828,stroke:#700010,color:#FFFFFF
-    classDef pending fill:#52525E,stroke:#303038,color:#FFFFFF
     class P0 done
     class P1 current
     class P2 pending

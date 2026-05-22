@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-omnis-palette="black-silver">
 <head>
-  <!-- baked from implementation-plan.md + implementation-plan.progress.json at 2026-05-22T13:24:04Z -->
+  <!-- baked from implementation-plan.md + implementation-plan.progress.json at 2026-05-22T14:05:37Z -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Plan Renderer</title>
@@ -239,6 +239,101 @@ main {
   justify-content: center;
 }
 .mermaid-rendered svg { max-width: 100%; height: auto; }
+
+/* ── Mermaid node theming ───────────────────────────────────────────── */
+/* Drive Phase Flow node colours from the active palette so the diagram
+   follows light/dark toggling and any palette swap. Use !important to
+   beat the inline `style="fill:#..."` mermaid emits when a plan's
+   classDef declares hex colours; class names alone (e.g. `class P1
+   current`) are enough. Cover every shape mermaid uses for a node and
+   every text-wrapping element it tries (rect/polygon/path/circle for
+   the shape; foreignObject + nodeLabel for the label). */
+
+.mermaid-rendered g.node > rect,
+.mermaid-rendered g.node > polygon,
+.mermaid-rendered g.node > path,
+.mermaid-rendered g.node > circle,
+.mermaid-rendered g.node > ellipse {
+  fill: var(--state-pending-text) !important;
+  stroke: var(--state-pending-text) !important;
+}
+.mermaid-rendered g.node .nodeLabel,
+.mermaid-rendered g.node .nodeLabel > p,
+.mermaid-rendered g.node foreignObject span,
+.mermaid-rendered g.node foreignObject p {
+  color: var(--on-accent) !important;
+  fill: var(--on-accent) !important;
+}
+
+.mermaid-rendered g.node.done > rect,
+.mermaid-rendered g.node.completed > rect,
+.mermaid-rendered g.node.done > polygon,
+.mermaid-rendered g.node.completed > polygon,
+.mermaid-rendered g.node.done > path,
+.mermaid-rendered g.node.completed > path,
+.mermaid-rendered g.node.done > circle,
+.mermaid-rendered g.node.completed > circle,
+.mermaid-rendered g.node.done > ellipse,
+.mermaid-rendered g.node.completed > ellipse {
+  fill: var(--state-completed-text) !important;
+  stroke: var(--state-completed-text) !important;
+}
+
+.mermaid-rendered g.node.current > rect,
+.mermaid-rendered g.node.inProgress > rect,
+.mermaid-rendered g.node.active > rect,
+.mermaid-rendered g.node.current > polygon,
+.mermaid-rendered g.node.inProgress > polygon,
+.mermaid-rendered g.node.active > polygon,
+.mermaid-rendered g.node.current > path,
+.mermaid-rendered g.node.inProgress > path,
+.mermaid-rendered g.node.active > path,
+.mermaid-rendered g.node.current > circle,
+.mermaid-rendered g.node.inProgress > circle,
+.mermaid-rendered g.node.active > circle,
+.mermaid-rendered g.node.current > ellipse,
+.mermaid-rendered g.node.inProgress > ellipse,
+.mermaid-rendered g.node.active > ellipse {
+  fill: var(--state-active-text) !important;
+  stroke: var(--state-active-text) !important;
+}
+
+.mermaid-rendered g.node.blocked > rect,
+.mermaid-rendered g.node.needsFixes > rect,
+.mermaid-rendered g.node.blocked > polygon,
+.mermaid-rendered g.node.needsFixes > polygon,
+.mermaid-rendered g.node.blocked > path,
+.mermaid-rendered g.node.needsFixes > path,
+.mermaid-rendered g.node.blocked > circle,
+.mermaid-rendered g.node.needsFixes > circle,
+.mermaid-rendered g.node.blocked > ellipse,
+.mermaid-rendered g.node.needsFixes > ellipse {
+  fill: var(--state-blocked-text) !important;
+  stroke: var(--state-blocked-text) !important;
+}
+
+.mermaid-rendered g.node.underReview > rect,
+.mermaid-rendered g.node.underReview > polygon,
+.mermaid-rendered g.node.underReview > path,
+.mermaid-rendered g.node.underReview > circle,
+.mermaid-rendered g.node.underReview > ellipse {
+  fill: var(--state-terminal-text) !important;
+  stroke: var(--state-terminal-text) !important;
+}
+
+.mermaid-rendered .edgePath .path,
+.mermaid-rendered .flowchart-link {
+  stroke: var(--border-strong) !important;
+}
+.mermaid-rendered .arrowheadPath,
+.mermaid-rendered marker path {
+  fill: var(--border-strong) !important;
+  stroke: var(--border-strong) !important;
+}
+.mermaid-rendered .edgeLabel {
+  background-color: var(--surface) !important;
+  color: var(--muted) !important;
+}
 
 /* ─── Phase chips ─────────────────────────────────────────────── */
 
@@ -720,9 +815,6 @@ flowchart TD
     P1 --> P2["Phase 2: Node detail popout + disabled external detail fetch"]
     P2 --> P3["Phase 3: Live SSE projection updates and polish"]
 
-    classDef done fill:#1A7048,stroke:#0E5030,color:#FFFFFF
-    classDef current fill:#A01828,stroke:#700010,color:#FFFFFF
-    classDef pending fill:#52525E,stroke:#303038,color:#FFFFFF
     class P0 done
     class P1 current
     class P2 pending
@@ -977,7 +1069,7 @@ _(none – telemetry/log/blob architecture is intentionally stubbed and deferred
   }
 }
 </script>
-  <script id="plan-bake-meta" type="application/json">{"baked_at": "2026-05-22T13:24:04Z", "plan": "implementation-plan.md", "progress": "implementation-plan.progress.json"}</script>
+  <script id="plan-bake-meta" type="application/json">{"baked_at": "2026-05-22T14:05:37Z", "plan": "implementation-plan.md", "progress": "implementation-plan.progress.json"}</script>
   <script id="renderer-js">// plan-renderer: turn a Plan-Contract markdown + a progress.json overlay
 // into a structured, interactive HTML view.
 //
