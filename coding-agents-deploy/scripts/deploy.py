@@ -703,10 +703,10 @@ def starter_phase_block() -> str:
         "## Phase 0: Initial implementation\n"
         "\n"
         "### Work\n"
-        "- (List work items for this phase.)\n"
+        "- [w1] (List work items for this phase.)\n"
         "\n"
         "### Acceptance Criteria\n"
-        "- (List acceptance criteria for this phase.)\n"
+        "- [a1] (List acceptance criteria for this phase.)\n"
         "\n"
     )
 
@@ -722,6 +722,10 @@ def plan_skeleton(info: dict) -> str:
         "```mermaid\n"
         "flowchart TD\n"
         "    P0[Phase 0: Initial implementation]\n"
+        "    classDef pending fill:#52525E,stroke:#303038,color:#FFFFFF\n"
+        "    classDef current fill:#A01828,stroke:#700010,color:#FFFFFF\n"
+        "    classDef done fill:#1A7048,stroke:#0E5030,color:#FFFFFF\n"
+        "    class P0 pending\n"
         "```\n"
         "\n"
         "## Recommended Execution Order\n"
@@ -738,7 +742,7 @@ def plan_skeleton(info: dict) -> str:
         + starter_phase_block()
         + "## Files to Create or Modify by Phase\n"
         "### Phase 0\n"
-        "- (List files this phase creates or modifies.)\n"
+        "- [f1] (List files this phase creates or modifies.)\n"
         "\n"
         "## Test Plan\n"
         "### Phase 0\n"
@@ -771,7 +775,7 @@ def ensure_phase_subsections(text: str) -> tuple[str, list[str]]:
                 line_end = len(updated)
             updated = (
                 updated[:line_end]
-                + "\n### Work\n- (List work items for this phase.)\n"
+                + "\n### Work\n- [w1] (List work items for this phase.)\n"
                 + updated[line_end:]
             )
             changes.append(f"Added ### Work under Phase {phase.number}")
@@ -792,7 +796,7 @@ def ensure_phase_subsections(text: str) -> tuple[str, list[str]]:
                 insert_at = updated.find("\n") + 1
             updated = (
                 updated[:insert_at].rstrip()
-                + "\n\n### Acceptance Criteria\n- (List acceptance criteria for this phase.)\n"
+                + "\n\n### Acceptance Criteria\n- [a1] (List acceptance criteria for this phase.)\n"
                 + updated[insert_at:]
             )
             changes.append(f"Added ### Acceptance Criteria under Phase {phase.number}")
@@ -821,7 +825,12 @@ def ensure_phase_subblocks(
             section,
             re.IGNORECASE | re.MULTILINE,
         ):
-            additions.append(f"### Phase {phase.number}\n- {placeholder}\n")
+            # Files-block placeholders get a stable [f1] ID so the renderer
+            # can key against them once the user fills the bullets in. Test
+            # Plan bullets aren't keyed by the progress overlay, so no ID
+            # there.
+            id_prefix = "[f1] " if section_title.lower().startswith("files ") else ""
+            additions.append(f"### Phase {phase.number}\n- {id_prefix}{placeholder}\n")
             changes.append(f"Added ### Phase {phase.number} under ## {section_title}")
     if not additions:
         return text, changes
@@ -888,7 +897,7 @@ def repair_plan_text(text: str, info: dict) -> tuple[str, list[str]]:
 
     if not has_top_section(text, "Files to Create or Modify by Phase"):
         body = "".join(
-            f"### Phase {phase.number}\n- (List files this phase creates or modifies.)\n\n"
+            f"### Phase {phase.number}\n- [f1] (List files this phase creates or modifies.)\n\n"
             for phase in sorted(phases, key=lambda p: p.number)
         )
         text = text.rstrip() + "\n\n" + plan_tail_block("Files to Create or Modify by Phase", body)
@@ -1149,6 +1158,15 @@ def main() -> int:
         repo_root = git_repo_root(target)
         if repo_root is not None:
             gi_rels = gitignore_candidate_rels(skill_root, args.role)
+            # plan-renderer runtime artifacts: `progress.json` and `.html` siblings
+            # of the plan. The deploy doesn't write them, but the agents do at
+            # runtime, and they should be gitignored by default (regenerable; the
+            # plan itself is the source of truth).
+            plan_stem = Path(info["plan_path"]).with_suffix("")
+            gi_rels = sorted(set(gi_rels + [
+                Path(f"{plan_stem}.progress.json"),
+                Path(f"{plan_stem}.html"),
+            ]))
             gi_snapshot = snapshot_gitignore_state(target, repo_root, gi_rels)
 
     deploy_tree(skill_root / "templates" / "common", target, subs,

@@ -11,6 +11,14 @@ Invoke as `/implement-phase 19` (single phase) or `/implement-phase 19 20 21` (m
 
 When implementing multiple phases, implement them all before building, testing, and reviewing as a single batch.
 
+**Live progress overlay.** This command writes `{{plan_path}}.progress.json` (sibling of the plan) to publish live state during the phase – which items are in flight, which inner-review cycle is running, an activity log, and any judgment calls worth surfacing to the reviewer. After every write, also bake the rendered view:
+
+```
+python .deployed-agents/plan-renderer/bake.py --plan {{plan_path}}
+```
+
+See **Live progress overlay** in `.deployed-agents/conventions.md` for the schema and the **Implementer write checkpoints** table for the exact when/what of each update. The bake is fast (a single Python invocation) – do not skip it after a progress write, or the user sees stale state in the browser.
+
 ## Steps
 
 ### 0. First-run check
@@ -35,9 +43,17 @@ Run `git fetch origin && git status --short --untracked-files=all` and report wh
 - **Origin ahead, work in progress**: stop and surface the divergence — let the user decide whether to rebase, reset, or proceed.
 - **Dirty worktree with unrelated user changes**: do not revert user changes. Work around them. If they actively block implementation, report a blocker.
 
+### 2.5. Initialise progress overlay
+
+For each target phase, ensure the phase's block in `{{plan_path}}.progress.json` exists. Create it if missing: `started_at` = now, `sub_state` = `"coding"`, `cycle` = `1`, `cycle_cap` = `10`, `items` keyed off the plan's `[w*]`/`[a*]`/`[f*]` bullet IDs (all `state: "pending"` initially), `activity` opens with `"phase started"`. Set `active_phase` to the lowest target phase number. Then bake.
+
+If the plan's bullets do not yet carry stable IDs, fall back to plain `1`, `2`, … indices (per kind) – the renderer matches by index when no ID prefix is present. Stable IDs survive bullet reorders; index-based fallback does not.
+
 ### 3. Implement the phases
 
 Implement every artifact listed under each target phase. Follow the project conventions in `.deployed-agents/conventions.md` and {{plan_path}}. Reuse existing helpers before introducing new ones — grep first.
+
+As you work, update `progress.json` per the **Implementer write checkpoints** table in `.deployed-agents/conventions.md` – at minimum: flip a Work or Files item to `"in-progress"` when you start it, to `"done"` when finished, and bake after each flip. Skip the bake and the user's open browser tab on the rendered HTML goes stale.
 
 **Implement the phase in full before you build or call the reviewer.** Every artifact, file, and task the phase calls out must be written and wired — no partial passes, no "build now and finish the rest after the review". Before leaving this step, re-read the phase and walk its `### Work`, `### Acceptance Criteria`, and the `## Files to Create or Modify by Phase` list (files to create *and* files to modify) against what you actually wrote; if any item is unwritten, stubbed where the plan expects an implementation, or only half-done, finish it now. The build and the reviewer are gates on a *complete* phase, not a progress check on a partial one — a partial pass just burns a build/review cycle.
 
@@ -63,6 +79,8 @@ These checks duplicate the reviewer's first-pass sweeps; doing them here means t
 
 ### 5. Spawn the reviewer (read-only audit)
 
+Before spawning, update the active phase block in `progress.json`: set `sub_state: "inner-review"`; on cycles ≥ 2 increment `cycle`; append activity `"inner-review pass requested (cycle K)"`. Bake.
+
 Spawn the `review-iterate` agent (`.claude/agents/review-iterate.md`). Use this prompt:
 
 > Independently review Phase N[, Phase M, …] against `{{plan_path}}` and the code on disk. Do NOT assume anything is implemented — verify each `### Work` and `### Acceptance Criteria` item against the actual code yourself, checking all items in your review checklist. Report findings as BLOCKER / MAJOR / MINOR / NIT. Do NOT implement fixes — just report what's wrong.
@@ -70,6 +88,8 @@ Spawn the `review-iterate` agent (`.claude/agents/review-iterate.md`). Use this 
 Hand the reviewer only the phase number(s). Do NOT describe, summarize, or list what you changed — the reviewer audits the plan and the code from scratch and must not be primed by your account of the work.
 
 ### 6. Implement review findings yourself
+
+For each non-trivial finding the reviewer returned, append an activity entry to `progress.json` with `role: "inner-review"` and a short `msg` like `finding[<SEV>] <file:line> <summary>`. Set `sub_state: "applying-fixes"`. Bake.
 
 The reviewer returned a list of findings. YOU (the main conversation) implement the fixes for CODE findings. Findings come in three categories:
 
@@ -94,6 +114,8 @@ The reviewer returned a list of findings. YOU (the main conversation) implement 
 Spawn the `review-iterate` agent again with the same prompt. The reviewer audits the updated code and reports new findings.
 
 Repeat steps 6–7 (you fix code, reviewer audits) until the reviewer returns zero BLOCKER, zero MAJOR, and zero non-`[DOC]` non-`[SHARED]` MINOR findings. `[DOC]` and `[SHARED]` findings do NOT block the review gate. NITs are acceptable but fix the trivial ones.
+
+When the reviewer reports clean, set `sub_state: "ready"` in `progress.json` and bake – this is the signal to the outer reviewer (and the user) that the phase is implementer-clean.
 
 **Repeated-feedback discipline**: if the reviewer reports the same finding across two cycles, address the exact `file:line` they cited before doing any other work. Don't add adjacent fixes — fix the specific thing first, rebuild, then re-spawn the reviewer.
 
@@ -126,6 +148,8 @@ git commit -m "Phase N: <Title>
 
 Do not use `git add -A` (stray files sneak in). Do not use `--no-verify`. Do not push — local commit only; the user pushes when they're ready. **When implementing multiple phases in one run, commit each phase separately as you go; push only after every phase in the run has been committed.**
 
+After the commit, append activity `"committed <short-sha>"` to `progress.json` and bake. Keep `sub_state: "ready"`; the outer reviewer (`review-implementation`) is what promotes the phase to `completed` and clears the progress block.
+
 ### 10. Update this command, implement-fixes, and review-iterate (mandatory last step before reporting)
 
 Look back at the run that just finished. Edit the overlay files IN PLACE before you write your final report — this is what keeps the next run shorter than this one. Triggers:
@@ -142,9 +166,11 @@ This step is **mandatory** before reporting. If nothing is genuinely worth chang
 
 ### 11. Report
 
-Per phase: one terse line. `Phase N (<Title>) — implemented, build clean, tests <X>/<Y>, committed <short-sha>.`
+Per phase: one terse line. `Phase N (<Title>) – implemented, build clean, tests <X>/<Y>, committed <short-sha>, rendered HTML: {{plan_path}}.html.`
 
 At the end, **always output the complete list of `[DOC]` findings accumulated across all review passes.** Even if you mentioned some during earlier steps, re-list every `[DOC]` finding so the user has one consolidated list. **Also list any `[SHARED]` findings** that were written to the shared-library suggestions file.
+
+If you appended any `proposed_decisions` to `progress.json` during the run, note them in the report so the user knows there are pending decisions for the outer reviewer to apply or reject.
 
 ## Things you do NOT do
 

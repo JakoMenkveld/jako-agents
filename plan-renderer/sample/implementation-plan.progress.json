@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "plan_path": "implementation-plan.md",
+  "updated_at": "2026-05-22T09:42:00Z",
+  "active_phase": 1,
+  "phases": {
+    "1": {
+      "sub_state": "applying-fixes",
+      "cycle": 2,
+      "cycle_cap": 3,
+      "started_at": "2026-05-22T09:14:00Z",
+      "items": {
+        "w1": { "state": "done" },
+        "w2": { "state": "done" },
+        "w3": { "state": "in-progress", "note": "tokens wired; mixed-status mapping under way" },
+        "w4": { "state": "in-progress", "note": "count badge done; legend pending" },
+        "w5": { "state": "pending" },
+        "w6": { "state": "pending" },
+        "f1": { "state": "done" },
+        "f2": { "state": "in-progress" },
+        "f3": { "state": "in-progress" },
+        "f4": { "state": "pending" },
+        "f5": { "state": "pending" },
+        "a1": { "state": "pending" },
+        "a2": { "state": "pending" },
+        "a3": { "state": "pending" },
+        "a4": { "state": "pending" },
+        "a5": { "state": "pending" }
+      },
+      "activity": [
+        { "at": "2026-05-22T09:42:00Z", "role": "implementer",  "msg": "fixing: aggregate count rendered as text instead of node attribute" },
+        { "at": "2026-05-22T09:38:00Z", "role": "inner-review", "msg": "finding[MAJOR] Flowchart.tsx:88 wrong type – count badge should be node data not label" },
+        { "at": "2026-05-22T09:35:00Z", "role": "inner-review", "msg": "cycle 2 started" },
+        { "at": "2026-05-22T09:32:00Z", "role": "implementer",  "msg": "inner-review pass requested (cycle 2)" },
+        { "at": "2026-05-22T09:18:00Z", "role": "implementer",  "msg": "Flowchart.tsx top-to-bottom layout complete; aggregate node renderer drafted" },
+        { "at": "2026-05-22T09:14:00Z", "role": "implementer",  "msg": "phase started; added @xyflow/react and scaffolded Flowchart.tsx" }
+      ],
+      "proposed_decisions": [
+        {
+          "at": "2026-05-22T09:20:00Z",
+          "text": "Use ReactFlow's built-in layout (dagre) rather than custom positioning",
+          "justification": "incremental status updates stay stable without re-layout jumps"
+        }
+      ]
+    }
+  }
+}

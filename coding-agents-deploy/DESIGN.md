@@ -32,6 +32,9 @@ C:\vsprojects\jako-agents\
     templates\
       common\
         _deployed-agents\conventions.md
+        _deployed-agents\plan-renderer\
+          bake.py
+          README.md
         _claude\commands\commit-and-sync.md
       coder-claude\
         _claude\agents\review-iterate.md
@@ -90,8 +93,19 @@ The setup has two lanes: Claude and Codex. The coding lane gets the rich impleme
 | `review-implementation` | Outer reviewer | Review one or more implementation phases, update the full plan status surface (headings, Work/Acceptance bullets, checkboxes, Phase Status table, per-phase Status lines, Phase Flow Mermaid node labels + class lines) in the plan's own legend within its narrow write policy, and commit the review locally. |
 | `archive-plan` | Outer reviewer | Archive a fully-completed plan into a dated `archive/` file and start a fresh, task-free plan that carries forward only durable context. Refuses to run while any task is outstanding and asks the user how to proceed. |
 | `review-and-fix` | Both lanes | Create a canonical implementation plan or repair structural gaps in an existing one. |
+| `plan-renderer` (no command) | Every role | Self-contained HTML renderer for the plan + a live `progress.json` overlay. Implementer and reviewer agents bake after every plan/overlay write so the rendered file is always current. |
 
 `.deployed-agents/conventions.md` is the shared instruction source for the deployed agents, referenced by every command and skill in both lanes. No root-level `AGENTS.md` / `CLAUDE.md` is deployed; the project's own copies (if any) are left untouched.
+
+## Plan Renderer
+
+`.deployed-agents/plan-renderer/` is the single self-contained `bake.py` script (plus a short README) that produces a self-contained, theme-aware HTML view of the implementation plan plus the implementer-owned `progress.json` overlay. The script embeds the HTML template, renderer JS, and both stylesheets as Python string constants; no other runtime files ship with it. Source files live in this repo at `plan-renderer/` and `python pack.py` there regenerates `bake.py`'s embedded constants whenever any of them change – the deploy then carries the updated `bake.py`.
+
+- **Bake**: `python .deployed-agents/plan-renderer/bake.py --plan <plan-path>` inlines the plan, the overlay, the renderer, and both stylesheets into a single `<plan-stem>.html` next to the plan. The output opens directly in any browser (`file://`; no server). All implementer and reviewer agents run the bake after every write to plan.md or progress.json.
+- **Schema**: `progress.json` is implementer-owned, sits at `<plan-stem>.progress.json`, and carries live sub-state, the inner-review cycle counter, an activity log, per-item state (keyed off the plan's `[w*]`/`[a*]`/`[f*]` bullet IDs), and any `proposed_decisions` the implementer wants to surface to the reviewer. Reviewer commands clear the phase block when promoting to completed. `archive-plan` moves the file alongside its plan into `archive/`. See `templates/common/_deployed-agents/conventions.md` (`## Live progress overlay`) for the full schema and write-checkpoint table.
+- **Lifecycle markers** in the plan: any one of a `## Phase Status` table, a per-phase `Status:` line, or Mermaid `class P0 done` lines (with matching `classDef`) carries the lifecycle state (`pending` / `current` / `under-review` / `needs-fixes` / `completed`). The reviewer owns these surfaces.
+- **Diagram guidance**: `review-and-fix` instructs planners to lean into Mermaid sequence/class/ER/state/flowchart diagrams inside phase design narratives where spatial information beats sequential prose; the renderer extracts and renders these inline.
+- **Gitignore**: `deploy.py` adds `<plan-stem>.progress.json` and `<plan-stem>.html` to the managed `.gitignore` block (both are regenerable runtime artifacts; the plan itself remains tracked).
 
 ## Deployment Flow
 

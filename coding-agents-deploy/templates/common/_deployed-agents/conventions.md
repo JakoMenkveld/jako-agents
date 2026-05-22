@@ -25,6 +25,118 @@ The authoritative plan is **[{{plan_path}}]({{plan_path}})**. Phases are headed 
 
 Do not invent acceptance criteria the plan doesn't list, and do not bundle multiple phases into one commit unless the orchestrating command says to.
 
+### Plan structure for the renderer
+
+The deployed plan renderer ([`.deployed-agents/plan-renderer/`](.deployed-agents/plan-renderer/)) reads the plan plus an implementer-owned progress overlay and emits a self-contained HTML view. Two small structural additions in the plan let the renderer key into the right items deterministically:
+
+1. **Stable per-item IDs** on Work, Acceptance, and Files bullets:
+
+   ```markdown
+   ### Work
+   - [w1] add @xyflow/react runtime dependency
+   - [w2] render ReactFlow top-to-bottom, full width
+
+   ### Acceptance Criteria
+   - [a1] a large run renders as a full-width vertically scrolling flowchart
+   - [a2] mixed-status run shows all five colours correctly
+
+   ### Phase 1
+   - [f1] `package.json` – add @xyflow/react runtime dep
+   - [f2] `src/components/observatory/Flowchart.tsx` – ReactFlow render
+   ```
+
+   IDs are per phase, numbered from 1, and prefixed `w` (Work), `a` (Acceptance), `f` (Files). Reviewer-emitted; coders never rewrite them.
+
+2. **Per-phase lifecycle marker** – any one of these carries the state (`pending`, `current`, `under-review`, `needs-fixes`, `completed`):
+
+   - A `## Phase Status` table near the top: `| Phase 0 | completed | … |`
+   - A `Status:` line immediately under the phase heading
+   - A Mermaid `class P0 done` / `class P0 current` line inside the `## Phase Flow` block (`classDef` declares the visual)
+
+   These are additive to the existing `✅` (completed) and `⚠️` (partial) heading markers. Reviewer-owned.
+
+### Live progress overlay
+
+`{{plan_path}}.progress.json` (sibling of the plan, e.g. `docs/implementation-plan.progress.json`) is an **implementer-owned** overlay that carries live state during a phase: which Work/Files items are in progress, which inner-review cycle the implementer is on, an activity log, and any decisions the implementer wants to propose to the reviewer. The renderer merges this into the HTML view in near-real-time.
+
+Schema:
+
+```json
+{
+  "version": 1,
+  "plan_path": "{{plan_path}}",
+  "updated_at": "<ISO-8601 UTC>",
+  "active_phase": 1,
+  "phases": {
+    "<phase-number>": {
+      "sub_state": "idle | coding | inner-review | applying-fixes | ready",
+      "cycle": 2,
+      "cycle_cap": 3,
+      "started_at": "<ISO-8601 UTC>",
+      "items": {
+        "w1": { "state": "pending | in-progress | done | blocked", "note": "optional" }
+      },
+      "activity": [
+        { "at": "<ISO-8601 UTC>", "role": "implementer | inner-review | reviewer", "msg": "…" }
+      ],
+      "proposed_decisions": [
+        { "at": "<ISO-8601 UTC>", "text": "…", "justification": "…" }
+      ]
+    }
+  }
+}
+```
+
+Ownership:
+
+- **Implementer commands** (`implement-phase`, `implement-fixes`) read and write `progress.json` continuously (see "Implementer write checkpoints" below).
+- The **inner reviewer** (`review-iterate`) stays read-only. The calling implementer command relays its findings into `activity` (with role `inner-review`) as part of the same write.
+- **Reviewer commands** (`review-implementation`) clear the `phases[N]` block when promoting phase N to `completed` (the plan's lifecycle marker is the authoritative record from that point). They may also fold accepted `proposed_decisions` into `## Decisions` in the plan and then clear them.
+- **`archive-plan`** moves `progress.json` alongside the plan when archiving and starts the fresh plan with no overlay.
+
+Coder-role agents do not edit the plan, but `proposed_decisions` is their channel for surfacing decisions to the reviewer.
+
+**Implementer write checkpoints.** Update `progress.json` and bake at each of these events – not on every line of code, but at meaningful transitions:
+
+| Event | Update | Bake |
+|---|---|---|
+| Phase started | Initialise `phases[N]` block (`started_at`, `sub_state: "coding"`, `cycle: 1`, items keyed off the plan's `[w*]`/`[a*]`/`[f*]` IDs, all `state: "pending"`); append activity `"phase started"`. | yes |
+| Begin a Work item / start writing a file | Flip the relevant item from `"pending"` → `"in-progress"`; optional one-line `note`. | yes |
+| Finish a Work item / file is written and would survive the build | Flip the item to `"done"`. | yes |
+| About to spawn `review-iterate` | Set `sub_state: "inner-review"`; on cycles ≥ 2 increment `cycle`; append activity `"inner-review pass requested (cycle K)"`. | yes |
+| Inner reviewer returned findings | For each non-trivial finding, append `{ role: "inner-review", msg: "finding[<SEV>] <file:line> <summary>" }`. Set `sub_state: "applying-fixes"`. | yes |
+| Inner reviewer returned clean | Set `sub_state: "ready"`. | yes |
+| Made a judgment call during implementation | Append to `proposed_decisions` with `text` (the decision) and `justification` (why). | yes |
+| Phase committed | Append activity `"committed <short-sha>"`; keep `sub_state: "ready"` (the outer reviewer takes over from here). | yes |
+
+`activity` is newest-first; trim each phase's list to ~50 entries by dropping the tail. `updated_at` is the file-level timestamp; refresh it on every write.
+
+Reviewer commands run the same bake command after every plan or progress write. The skipped bake leaves the rendered HTML stale, so anyone watching `{{plan_path}}.html` in a browser sees outdated state.
+
+### Bake step
+
+Every write to the plan or the progress overlay must be followed by a bake. The deployed renderer is at `.deployed-agents/plan-renderer/`; the bake command is:
+
+```
+python .deployed-agents/plan-renderer/bake.py --plan {{plan_path}}
+```
+
+This refreshes `{{plan_path}}`.html (sibling of the plan) – a self-contained file the user can open directly in any browser (`file://`; no server). Auto-refresh on the page picks up the new state without intervention.
+
+The bake is fast (single-pass file reads + string replace); per-write overhead is negligible. Skipping the bake leaves the rendered HTML stale, so the user sees outdated state.
+
+### Diagrams in planning
+
+When `review-and-fix` creates or repairs phases, lean into Mermaid diagrams to make spatial information legible – the renderer turns them into proper visuals. Use the right diagram for the situation:
+
+- **Sequence diagrams** for request/response flows, agent interactions, message handoffs.
+- **Class diagrams** for new data models, object relationships, type hierarchies.
+- **ER diagrams** for database schema changes.
+- **State diagrams** for state machines, lifecycle transitions.
+- **Flowcharts** for control flow that branches non-trivially.
+
+Inline diagram blocks directly inside the phase prose (between the phase heading and `### Work`) where they clarify the design. Top-level `## Phase Flow` is the existing place for the phase dependency graph; new diagrams go in-phase.
+
 ## Build & test
 
 ```

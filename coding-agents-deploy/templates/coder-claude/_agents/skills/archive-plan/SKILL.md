@@ -19,6 +19,7 @@ The flow is: **verify nothing is outstanding → move the old plan into `archive
 - Any `## Phase Status` table row whose Status is not done.
 - Any `## Phase Flow` Mermaid node whose label icon or `class … <className>` line is not the done class.
 - Any in-progress / pending / blocked / partial marker anywhere (`🟡`, `⬜`, `🔴`, `⚠️`, …).
+- Any non-empty phase block in `{{plan_path}}.progress.json` (the implementer-owned live overlay). A populated block means an implementer is mid-phase and review-implementation has not yet promoted it to completed – there is outstanding work even if no plan marker reflects it yet.
 
 Placeholder skeleton bullets written in parentheses (e.g. `- (List work items for this phase.)`) are **not** outstanding tasks — they mean the phase was never populated.
 
@@ -45,6 +46,8 @@ Read the whole plan. Note its `# <Title>`, summary/background paragraphs, `## Au
 - Archive directory: an `archive/` subdirectory beside the plan (e.g. for `docs/implementation-plan.md` → `docs/archive/`). Create it if missing.
 - Dated filename: `<plan-stem>-<YYYYMMDD>.md` (today's date). If that file already exists, append `-<HHMMSS>` so nothing is overwritten.
 - Move with `git mv` when the plan is tracked (history follows the rename); otherwise a plain move. **Copy the content byte-for-byte — never edit the archived copy**, including any unfinished tasks under option 2.
+- If `{{plan_path}}.progress.json` exists, move it alongside with the same dated stem (`<plan-stem>-<YYYYMMDD>.progress.json`). Use `git mv` when tracked. If the file is effectively empty (no `phases` entries), delete it instead of archiving.
+- Likewise the rendered HTML `{{plan_path}}.html` (if present) – move alongside as `<plan-stem>-<YYYYMMDD>.html`. It is the visual snapshot of the moment the plan was archived.
 
 ### 3. Write the fresh, task-free plan
 
@@ -64,14 +67,20 @@ Create a new `{{plan_path}}` in the canonical structure (the same layout `/revie
 - `## Residual Risks` — copy forward only the risks still relevant; drop risks the archived work closed; reword any whose blast radius changed.
 - `## Carried-Forward Context` — **only** when option 2 was chosen (or there is durable architectural context worth keeping). Narrative bullets summarizing unfinished/relevant context for whoever plans the next cycle. Never tasks, checkboxes, or phases.
 
-No status markers anywhere in the new plan — it starts clean.
+No status markers anywhere in the new plan – it starts clean. Do not create a new `progress.json` – the fresh plan has no in-flight work.
+
+After writing the fresh plan, run the bake command once to refresh the rendered HTML beside it:
+
+```
+python .deployed-agents/plan-renderer/bake.py --plan {{plan_path}}
+```
 
 ### 4. Commit locally
 
-Stage exactly the rename and the new plan (the moved file under `archive/` and `{{plan_path}}`), nothing else:
+Stage exactly the rename(s) and the new plan: the moved plan + any moved `progress.json` / `.html` snapshot under `archive/`, plus the fresh `{{plan_path}}`. The fresh `{{plan_path}}.html` is regenerable (the agent rebakes on every plan touch); leave it untracked. Nothing else:
 
 ```
-git add <archive/dated-file> {{plan_path}}
+git add <archive/dated-file(s)> {{plan_path}}
 git commit -m "Archive implementation plan (<YYYYMMDD>) and start fresh plan"
 ```
 

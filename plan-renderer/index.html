@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en" data-omnis-palette="black-silver">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plan Renderer</title>
+  <!-- BAKE:CSS-BLACK-SILVER -->
+  <link rel="stylesheet" href="black-silver.css" />
+  <!-- BAKE:CSS-STYLES -->
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <div class="app-bar">
+    <span class="app-title">plan-renderer</span>
+    <div class="controls">
+      <button id="refresh-toggle" class="btn btn-ghost" type="button">auto-refresh: off</button>
+      <button id="theme-toggle" class="btn btn-ghost" type="button">dark mode</button>
+    </div>
+  </div>
+  <main id="plan-root"></main>
+  <!-- BAKE:INLINE-DATA -->
+  <!-- BAKE:RENDERER-JS -->
+  <script src="renderer.js"></script>
+</body>
+</html>

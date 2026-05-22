@@ -7,10 +7,10 @@ aliases: [raf, plan-fix]
 
 Create or repair the implementation plan at `{{plan_path}}` so it complies with what the implementer (`/implement-phase`) and reviewer (`/review-implementation`) agents expect.
 
-This command operates in two modes — it picks the mode automatically:
+This command operates in two modes – it picks the mode automatically:
 
-- **Create mode** — when no plan file exists at `{{plan_path}}`, or when invoked with `new` / `create` / `--new`.
-- **Audit + auto-fix mode** — when a plan file exists. The default.
+- **Create mode** – when no plan file exists at `{{plan_path}}`, or when invoked with `new` / `create` / `--new`.
+- **Audit + auto-fix mode** – when a plan file exists. The default.
 
 ## What is "the canonical structure"?
 
@@ -40,25 +40,25 @@ flowchart TD
 - <exit criteria for the WHOLE plan, not per-phase>
 
 ## Phase N: <Title>
-<optional design narrative>
+<optional design narrative; embed Mermaid sequence/class/ER/state/flowchart blocks here where they clarify the design – see "Diagrams" below>
 
 ### Work
-- <task 1>
-- <task 2>
+- [w1] <task 1>
+- [w2] <task 2>
 
 ### Acceptance Criteria
-- <criterion 1>
-- <criterion 2>
+- [a1] <criterion 1>
+- [a2] <criterion 2>
 
 (repeat per phase)
 
 ## Files to Create or Modify by Phase
 ### Phase 0
-- `path/to/file1`
-- `path/to/file2`
+- [f1] `path/to/file1`
+- [f2] `path/to/file2`
 ### Phase 1
-- `path/to/file3`
-(repeat per phase; list files the phase creates or modifies)
+- [f1] `path/to/file3`
+(repeat per phase; list files the phase creates or modifies; IDs restart per phase)
 
 ## Test Plan
 ### Phase 0
@@ -80,6 +80,32 @@ flowchart TD
 ```
 
 Status markers (`✅`, `⚠️`, `⚠`) on phase headings, `### Work` bullets, and `### Acceptance Criteria` bullets are written by `/review-implementation` over time. **This command never adds, edits, or removes status markers.**
+
+### Stable item IDs
+
+Every `### Work`, `### Acceptance Criteria`, and per-phase Files bullet carries an ID in square brackets directly after the leading `-`: `[w1]`, `[w2]`, … for Work; `[a1]`, `[a2]`, … for Acceptance; `[f1]`, `[f2]`, … for Files. IDs restart at `1` per phase and per kind. These keys the implementer's `progress.json` overlay against; without them the renderer falls back to bullet index and loses track when bullets reorder. This command emits them in new plans and adds them on repair where missing.
+
+### Lifecycle surfaces (reviewer-owned, optional)
+
+The Plan Contract supports any one of these to mark a phase's lifecycle (`pending` / `current` / `under-review` / `needs-fixes` / `completed`):
+
+- A `## Phase Status` table near the top: `| Phase 0 | completed | … |`.
+- A `Status:` line immediately under the phase heading.
+- Mermaid `class P0 done` (or `current`/`pending`/…) inside the `## Phase Flow` block, with matching `classDef` declarations.
+
+These are additive to the existing `✅`/`⚠️` heading markers; the reviewer writes them. This command never touches them, but does ensure the Phase Flow `classDef` block exists if the plan uses Mermaid classes.
+
+### Diagrams in phase narratives
+
+When generating or repairing a phase, lean into Mermaid diagrams in the design narrative (between the phase heading and `### Work`) where they clarify the design better than prose. Use the right diagram for the situation:
+
+- **Sequence diagrams** for request/response flows, agent interactions, message handoffs.
+- **Class diagrams** for new data models, object relationships, type hierarchies.
+- **ER diagrams** for database schema changes.
+- **State diagrams** for state machines, lifecycle transitions.
+- **Flowcharts** for control flow that branches non-trivially.
+
+The renderer extracts these from phase prose and turns them into proper visuals. Diagrams are optional, never required – but planning agents should propose one whenever spatial structure beats sequential prose.
 
 ## Auto-fix mode (default when plan exists)
 
@@ -109,6 +135,7 @@ Check for each of the following. A finding is **STRUCTURAL** when the implemente
 | Phase headings in the form `## Phase N: <Title>` (colon, not dash) | STYLE | Both forms work, but canonical is colon. |
 | Phase numbering is contiguous (0, 1, 2, … no gaps) | STYLE | Gaps confuse readers but don't break the agents. |
 | Sections appear in the canonical order shown above | STYLE | Out-of-order sections work but read awkwardly. |
+| Every `### Work` / `### Acceptance Criteria` / `### Phase N` Files bullet carries a stable `[w*]`/`[a*]`/`[f*]` ID | STYLE | Without IDs, the renderer falls back to bullet index and loses track when bullets reorder. Auto-fix adds them. |
 
 ### 3. Auto-fix structural issues
 
@@ -124,9 +151,9 @@ For every STRUCTURAL finding, write the missing section into the plan **without 
 
 - **Missing `## Recommended Execution Order`**: insert a numbered list with one entry per existing phase, in ascending number order. Format: `1. Phase 0 – <title>`.
 
-- **Missing `## Automation Contract`**: insert with a placeholder bullet: `- (Document build/test/CI/environment assumptions here. The implementer reads this before starting.)` — the user fills in the real content.
+- **Missing `## Automation Contract`**: insert with a placeholder bullet: `- (Document build/test/CI/environment assumptions here. The implementer reads this before starting.)` – the user fills in the real content.
 
-- **Missing `## Definition of Done`**: insert with a placeholder bullet: `- (List the exit criteria for the whole plan. The reviewer uses this as the overall completion gate.)` — the user fills in the real content.
+- **Missing `## Definition of Done`**: insert with a placeholder bullet: `- (List the exit criteria for the whole plan. The reviewer uses this as the overall completion gate.)` – the user fills in the real content.
 
 - **Phase missing `### Work` block**: insert an empty `### Work` sub-heading directly under the phase heading with a placeholder bullet: `- (List work items for this phase.)`.
 
@@ -162,6 +189,7 @@ If the plan was already STRUCTURAL-clean, also apply STYLE fixes:
 - Normalize phase headings to `## Phase N: <Title>` form.
 - If two or more phases share the same number, leave it alone and surface a finding to the user (don't guess at the renumbering).
 - Reorder sections to the canonical order **only if doing so doesn't move any phase out of the body of the plan**. Reordering moves whole sections; it does not merge or split them.
+- **Add missing stable item IDs.** Walk each phase's `### Work`, `### Acceptance Criteria`, and the per-phase Files block. For any bullet whose first non-whitespace token is not already `[wN]` / `[aN]` / `[fN]`, insert the next available ID in sequence for that phase + kind. Existing IDs are never reordered or renumbered – only new ones are added at the end of each list. The implementer's progress overlay keys against these IDs, so adding them mid-flight is safe (any pre-existing progress entry whose ID still matches keeps working).
 
 ### 6. Report
 
@@ -195,10 +223,10 @@ If `{{plan_path}}` already exists, switch to audit + auto-fix mode instead. Neve
 
 ### 2. Gather inputs
 
-Ask the user (in a single bundled question if possible — Cowork's AskUserQuestion tool, or otherwise inline):
+Ask the user (in a single bundled question if possible – Cowork's AskUserQuestion tool, or otherwise inline):
 
 - A one-paragraph summary of what's being built and why.
-- A rough list of phase titles (numbered from 0 or 1). The user may say "I don't know yet — propose some" — in that case, propose 3-5 plausible phases based on the project name and stack from `.deployed-agents/conventions.md`, then ask for sign-off.
+- A rough list of phase titles (numbered from 0 or 1). The user may say "I don't know yet – propose some" – in that case, propose 3-5 plausible phases based on the project name and stack from `.deployed-agents/conventions.md`, then ask for sign-off.
 
 Do NOT ask the user to fill in `### Work`, `### Acceptance Criteria`, `## Files to Create or Modify by Phase`, `## Test Plan`, `## Definition of Done`, or `## Automation Contract` content interactively – those go in as placeholders that the user fills in afterwards. The goal of create mode is to lay down a compliant skeleton, not to extract a detailed plan from the user in one shot.
 
@@ -206,13 +234,15 @@ Do NOT ask the user to fill in `### Work`, `### Acceptance Criteria`, `## Files 
 
 Write `{{plan_path}}` with the canonical structure described at the top of this document. Fill in:
 
-- `# <Title>` — `<Project Name> Implementation Plan`.
-- Summary paragraph — verbatim from the user's input.
-- `## Phase Flow` — mermaid flowchart with one node per phase in linear order (P0 → P1 → P2 → …).
-- `## Recommended Execution Order` — numbered list of phase titles.
-- Every phase heading, `### Work` block, `### Acceptance Criteria` block, `### Phase N` sub-blocks under `## Files to Create or Modify by Phase` and `## Test Plan` – populated with the placeholder bullets shown in the auto-fix section.
+- `# <Title>` – `<Project Name> Implementation Plan`.
+- Summary paragraph – verbatim from the user's input.
+- `## Phase Flow` – mermaid flowchart with one node per phase in linear order (P0 → P1 → P2 → …).
+- `## Recommended Execution Order` – numbered list of phase titles.
+- Every phase heading, `### Work` block, `### Acceptance Criteria` block, `### Phase N` sub-blocks under `## Files to Create or Modify by Phase` and `## Test Plan` – populated with the placeholder bullets shown in the auto-fix section, and with **stable IDs already prefixed** (e.g. `- [w1] (List work items for this phase.)`).
 - `## Definition of Done`, `## Automation Contract` – placeholder bullets.
 - `## Decisions`, `## Open Questions`, `## Residual Risks` – empty.
+
+When you have enough information to propose real phase narratives (not just titles), inline relevant diagrams in the design narrative section per the **Diagrams in phase narratives** guidance above.
 
 ### 4. Report
 
@@ -233,5 +263,5 @@ Before running /implement-phase you should fill in:
 - Do not touch status markers or checklist boxes.
 - Do not rewrite, reorder, or remove `## Open Questions` (append-only, user-owned) or the `## Decisions` content (free-form, maintained by the user and `/review-implementation`); do not flag either section as a defect when it is empty or just says there are none.
 - Do not rename phases. (Renumbering or retitling phases is the user's call.)
-- Do not delete sections, even ones that don't belong in the canonical list — they may be user-specific additions.
+- Do not delete sections, even ones that don't belong in the canonical list – they may be user-specific additions.
 - Do not commit. The user reviews and commits.

@@ -7,6 +7,14 @@ aliases: [fixes, ifix]
 
 Take a user-provided list of findings, implement the fixes yourself, spawn the read-only `review-iterate` agent to audit, iterate until clean, then commit locally.
 
+**Live progress overlay.** Like `/implement-phase`, this command writes `{{plan_path}}.progress.json` and bakes after every write so the user can monitor progress in a browser. See **Live progress overlay** + **Implementer write checkpoints** in `.deployed-agents/conventions.md` for schema and timing. Bake command:
+
+```
+python .deployed-agents/plan-renderer/bake.py --plan {{plan_path}}
+```
+
+Which phase block to touch: if the findings list points at a specific phase (`Phase N: …`), update that phase's block; if `$ARGUMENTS` was empty and the command fell back to the first in-progress phase, update that block. Phase blocks must already exist (created by `/implement-phase`); if not, create one with `sub_state: "applying-fixes"` and bake.
+
 ## Steps
 
 ### 0. First-run check
@@ -53,6 +61,8 @@ Reach this step only once every finding is applied (step 3 gate). Iterate build 
 
 ### 5. Spawn the reviewer
 
+Before spawning, update the target phase's block in `progress.json`: set `sub_state: "inner-review"`; on cycles ≥ 2 increment `cycle`; append activity `"inner-review pass requested (cycle K)"`. Bake.
+
 Spawn the `review-iterate` agent (`.claude/agents/review-iterate.md`). Prompt:
 
 > Independently verify whether each of the following findings is fully resolved in the code, that no regression was introduced, and that the implementation still satisfies `{{plan_path}}`: [paste the findings list from step 1 verbatim]. Do NOT assume any of them were addressed — check each against the actual code yourself. Report findings as BLOCKER / MAJOR / MINOR / NIT. Do NOT implement fixes — just report what's wrong.
@@ -61,13 +71,15 @@ Hand the reviewer the original findings list to verify against — not an accoun
 
 ### 6. Implement reviewer findings + re-spawn
 
+For each non-trivial finding the reviewer returned, append an activity entry to `progress.json` with `role: "inner-review"` and a short `msg` like `finding[<SEV>] <file:line> <summary>`. Set `sub_state: "applying-fixes"`. Bake.
+
 Same three-category protocol as `/implement-phase`:
 
 - **Code findings**: you fix (BLOCKER/MAJOR always; MINOR unless they conflict with current architecture).
 - **`[DOC]` findings**: relay to user, do not edit docs.
 - **`[SHARED]` findings**: collect for the shared-library suggestions file.
 
-Re-spawn the reviewer after each fix batch. Iterate until clean (zero BLOCKER/MAJOR/non-`[DOC]`-non-`[SHARED]` MINOR).
+Re-spawn the reviewer after each fix batch. Iterate until clean (zero BLOCKER/MAJOR/non-`[DOC]`-non-`[SHARED]` MINOR). On the clean pass, set `sub_state: "ready"` and bake.
 
 **Repeated-feedback discipline**: if the reviewer reports the same finding across two cycles, address the exact `file:line` they cited before doing any other work.
 
@@ -81,6 +93,8 @@ git commit -m "Apply fixes: <short summary>"
 ```
 
 No `git add -A`, no `--no-verify`. Do not push.
+
+After the commit, append activity `"committed <short-sha>"` to `progress.json` and bake. Leave `sub_state: "ready"` – the outer reviewer (`review-implementation`) is what promotes the phase to `completed` and clears the progress block.
 
 ### 8. Update this command, implement-phase, and review-iterate (mandatory last step before reporting)
 
@@ -98,4 +112,4 @@ This step is **mandatory** before reporting. If nothing is genuinely worth chang
 
 ### 9. Report
 
-One-line summary plus the consolidated list of `[DOC]` findings collected across all review passes, plus any `[SHARED]` findings written.
+One-line summary plus the consolidated list of `[DOC]` findings collected across all review passes, plus any `[SHARED]` findings written. Include the rendered HTML location (`{{plan_path}}.html`) and any `proposed_decisions` you appended to `progress.json` during the run.
