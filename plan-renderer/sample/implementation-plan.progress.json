@@ -1,21 +1,21 @@
 {
   "version": 1,
   "plan_path": "implementation-plan.md",
-  "updated_at": "2026-05-22T09:42:00Z",
+  "updated_at": "2026-05-23T11:08:24Z",
   "active_phase": 1,
   "phases": {
     "1": {
       "sub_state": "applying-fixes",
-      "cycle": 2,
-      "cycle_cap": 3,
-      "started_at": "2026-05-22T09:14:00Z",
+      "cycle": 3,
+      "cycle_cap": 10,
+      "started_at": "2026-05-23T09:14:12Z",
       "items": {
         "w1": { "state": "done" },
         "w2": { "state": "done" },
         "w3": { "state": "in-progress", "note": "tokens wired; mixed-status mapping under way" },
         "w4": { "state": "in-progress", "note": "count badge done; legend pending" },
         "w5": { "state": "pending" },
-        "w6": { "state": "pending" },
+        "w6": { "state": "blocked", "note": "needs aggregate-node lazy-expand API from backend first" },
         "f1": { "state": "done" },
         "f2": { "state": "in-progress" },
         "f3": { "state": "in-progress" },
@@ -28,16 +28,22 @@
         "a5": { "state": "pending" }
       },
       "activity": [
-        { "at": "2026-05-22T09:42:00Z", "role": "implementer",  "msg": "fixing: aggregate count rendered as text instead of node attribute" },
-        { "at": "2026-05-22T09:38:00Z", "role": "inner-review", "msg": "finding[MAJOR] Flowchart.tsx:88 wrong type – count badge should be node data not label" },
-        { "at": "2026-05-22T09:35:00Z", "role": "inner-review", "msg": "cycle 2 started" },
-        { "at": "2026-05-22T09:32:00Z", "role": "implementer",  "msg": "inner-review pass requested (cycle 2)" },
-        { "at": "2026-05-22T09:18:00Z", "role": "implementer",  "msg": "Flowchart.tsx top-to-bottom layout complete; aggregate node renderer drafted" },
-        { "at": "2026-05-22T09:14:00Z", "role": "implementer",  "msg": "phase started; added @xyflow/react and scaffolded Flowchart.tsx" }
+        { "at": "2026-05-23T09:14:12Z", "role": "implementer",  "msg": "phase started; added @xyflow/react and scaffolded Flowchart.tsx" },
+        { "at": "2026-05-23T09:18:47Z", "role": "implementer",  "msg": "Flowchart.tsx top-to-bottom layout complete; aggregate node renderer drafted" },
+        { "at": "2026-05-23T09:32:05Z", "role": "implementer",  "msg": "inner-review pass requested (cycle 1)" },
+        { "at": "2026-05-23T09:35:11Z", "role": "inner-review", "msg": "finding[MAJOR] Flowchart.tsx:88 count badge should be node data not label" },
+        { "at": "2026-05-23T09:35:11Z", "role": "inner-review", "msg": "finding[MINOR] Flowchart.tsx:42 single-letter map param (n) should be node" },
+        { "at": "2026-05-23T09:42:00Z", "role": "implementer",  "msg": "applied 2 fixes for cycle 1: badge moved to node.data, renamed map params" },
+        { "at": "2026-05-23T10:02:18Z", "role": "implementer",  "msg": "inner-review pass requested (cycle 2)" },
+        { "at": "2026-05-23T10:06:33Z", "role": "inner-review", "msg": "finding[MAJOR] Flowchart.tsx:131 lazy-expand subtree never re-collapses" },
+        { "at": "2026-05-23T10:48:50Z", "role": "implementer",  "msg": "applied 1 fix for cycle 2: lazy-expand collapse handler wired" },
+        { "at": "2026-05-23T10:55:01Z", "role": "implementer",  "msg": "inner-review pass requested (cycle 3)" },
+        { "at": "2026-05-23T11:02:14Z", "role": "inner-review", "msg": "finding[MINOR] Flowchart.tsx:201 legend mounts twice on hot reload" },
+        { "at": "2026-05-23T11:08:24Z", "role": "implementer",  "msg": "starting MINOR fix at Flowchart.tsx:201" }
       ],
       "proposed_decisions": [
         {
-          "at": "2026-05-22T09:20:00Z",
+          "at": "2026-05-23T09:20:00Z",
           "text": "Use ReactFlow's built-in layout (dagre) rather than custom positioning",
           "justification": "incremental status updates stay stable without re-layout jumps"
         }

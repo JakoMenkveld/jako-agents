@@ -123,6 +123,7 @@ def load_conventions(skill_root: Path, info: dict) -> str:
 
 
 def build_substitutions(info: dict, conventions_block: str) -> dict[str, str]:
+    plan_stem = str(Path(info["plan_path"]).with_suffix("")).replace("\\", "/")
     return {
         "project_name": info["project_name"],
         "stack_summary": info["stack_summary"],
@@ -130,6 +131,8 @@ def build_substitutions(info: dict, conventions_block: str) -> dict[str, str]:
         "test_cmd": info["test_cmd"],
         "lint_cmd": info["lint_cmd"] or "",
         "plan_path": info["plan_path"],
+        "plan_progress_path": f"{plan_stem}.progress.json",
+        "plan_html_path": f"{plan_stem}.html",
         "conventions_block": conventions_block,
     }
 
@@ -340,6 +343,7 @@ def merge_markdown(
     interactive: bool,
     template_updates: str,
     summary: list[str],
+    conflict_default: str = "p",
 ) -> tuple[str, str | None]:
     """Merge a rendered Markdown template with an existing project file.
 
@@ -402,7 +406,7 @@ def merge_markdown(
                 "t": "use the source template version",
                 "a": "use the template and append the project body",
             },
-            "p",
+            conflict_default,
             interactive,
         )
 
@@ -453,6 +457,7 @@ def merge_plain_text(
     interactive: bool,
     template_updates: str,
     summary: list[str],
+    conflict_default: str = "p",
 ) -> tuple[str, str | None]:
     decision = ask_choice(
         f"Existing non-Markdown file differs from template: {rel}.",
@@ -460,7 +465,7 @@ def merge_plain_text(
             "p": "keep the project file",
             "t": "use the source template file",
         },
-        "p",
+        conflict_default,
         interactive,
     )
     if decision == "t":
@@ -524,7 +529,8 @@ def write_project_file(
 def deploy_tree(template_root: Path, target: Path, subs: dict[str, str],
                 dry_run: bool, no_backup: bool, merge_existing: bool,
                 interactive: bool, template_updates: str,
-                summary: list[str], rendered_rels: set[Path]) -> None:
+                summary: list[str], rendered_rels: set[Path],
+                conflict_default: str = "p") -> None:
     """Render every file under template_root into target."""
     if not template_root.is_dir():
         return
@@ -551,11 +557,13 @@ def deploy_tree(template_root: Path, target: Path, subs: dict[str, str],
 
         if rel.suffix.lower() == ".md":
             merged, template_update = merge_markdown(
-                rel, rendered, existing, interactive, template_updates, summary
+                rel, rendered, existing, interactive, template_updates, summary,
+                conflict_default=conflict_default,
             )
         else:
             merged, template_update = merge_plain_text(
-                rel, rendered, existing, interactive, template_updates, summary
+                rel, rendered, existing, interactive, template_updates, summary,
+                conflict_default=conflict_default,
             )
 
         if template_update is not None:
@@ -1117,6 +1125,10 @@ def main() -> int:
                     help="Do not create or repair the detected implementation plan.")
     ap.add_argument("--no-gitignore", action="store_true",
                     help="Do not add deployed agent scaffolding to the repo .gitignore.")
+    ap.add_argument("--conflict-default", choices=("p", "t", "a"), default="p",
+                    help="Default merge action for non-interactive runs and prompt defaults: "
+                         "p=keep project (back-compat), t=use template, a=template then append project body. "
+                         "Use 't' for an overlay refresh when the templates have legitimately moved on.")
     args = ap.parse_args()
 
     target = Path(args.target).resolve()
@@ -1168,7 +1180,8 @@ def main() -> int:
 
     deploy_tree(skill_root / "templates" / "common", target, subs,
                 args.dry_run, args.no_backup, args.merge_existing,
-                interactive, args.template_updates, summary, rendered_rels)
+                interactive, args.template_updates, summary, rendered_rels,
+                conflict_default=args.conflict_default)
 
     role_dirs = []
     if args.role in ("claude-codes", "both"):
@@ -1178,7 +1191,8 @@ def main() -> int:
     for d in role_dirs:
         deploy_tree(skill_root / "templates" / d, target, subs,
                     args.dry_run, args.no_backup, args.merge_existing,
-                    interactive, args.template_updates, summary, rendered_rels)
+                    interactive, args.template_updates, summary, rendered_rels,
+                    conflict_default=args.conflict_default)
 
     if args.merge_existing:
         promote_project_only_files(

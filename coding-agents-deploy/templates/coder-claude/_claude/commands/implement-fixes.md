@@ -7,13 +7,15 @@ aliases: [fixes, ifix]
 
 Take a user-provided list of findings, implement the fixes yourself, spawn the read-only `review-iterate` agent to audit, iterate until clean, then commit locally.
 
-**Live progress overlay.** Like `/implement-phase`, this command writes `{{plan_path}}.progress.json` and bakes after every write so the user can monitor progress in a browser. See **Live progress overlay** + **Implementer write checkpoints** in `.deployed-agents/conventions.md` for schema and timing. Bake command:
+**Live progress overlay (mandatory, not optional).** Like `/implement-phase`, this command writes `{{plan_progress_path}}` at every meaningful transition – per-finding start, per fix-batch, per inner-review cycle, commit. **Progress writes are step gates, not commentary.** Skipping them strands the user's browser tab on stale state and reads as a stall. Bake after every write:
 
 ```
 python .deployed-agents/plan-renderer/bake.py --plan {{plan_path}}
 ```
 
-Which phase block to touch: if the findings list points at a specific phase (`Phase N: …`), update that phase's block; if `$ARGUMENTS` was empty and the command fell back to the first in-progress phase, update that block. Phase blocks must already exist (created by `/implement-phase`); if not, create one with `sub_state: "applying-fixes"` and bake.
+See **Live progress overlay** + **Implementer write checkpoints** in `.deployed-agents/conventions.md` for schema and timing.
+
+Which phase block to touch: if the findings list points at a specific phase (`Phase N: …`), update that phase's block; if `$ARGUMENTS` was empty and the command fell back to the first in-progress phase, update that block. Phase blocks must already exist (created by `/implement-phase`); if not, create one with `sub_state: "applying-fixes"` (carrying a real ISO-8601 `started_at` and `updated_at`, not a midnight placeholder) and bake.
 
 ## Steps
 
@@ -41,6 +43,12 @@ List the findings to the user so they can confirm before you proceed, noting whe
 
 Work through each finding systematically. Follow project conventions (see `.deployed-agents/conventions.md`). Do NOT exceed the scope of the findings — no opportunistic refactors.
 
+**Per-finding progress gate (do this for every finding, no exceptions).** Before you start a finding, write `{{plan_progress_path}}` appending `{role: "implementer", msg: "starting <SEV> <file:line>: <one-line scope>"}` and refresh `updated_at`. Bake. When the finding is resolved on disk, write another activity entry summarising what changed (`{role: "implementer", msg: "resolved <SEV> <file:line>: <one-line outcome>"}`). Bake. If a Work or Files item the plan tracks is affected, also flip / refresh its state and `note` in the same write.
+
+A whole sweep of fixes with no new activity entries on disk means the overlay is broken – the user sees no movement. Even if a fix takes ninety seconds, log it.
+
+A judgment call worth the outer reviewer's attention (architectural pivot, deferred sub-task, scope reduction) goes into `proposed_decisions` in the same write – do not save these for the end.
+
 **Apply every finding in full before you build or call the reviewer.** Finish the entire findings list — no partial passes, no building or spawning the reviewer with some findings still unaddressed. Before leaving this step, walk the findings list item by item and confirm each is actually resolved in the code. The build and the reviewer are gates on the *complete* fix set, not a progress check on a partial one — a partial pass just burns a build/review cycle.
 
 Do NOT modify `{{plan_path}}` or related plan/data-model docs. The reviewer may report doc staleness as `[DOC]` findings — relay those to the user. The `## Decisions` section is free-form and live: if a fix reveals a decision that should be added or changed, you may *suggest* that edit (state the proposed Decisions wording in your report for the user/reviewer to apply) — but never edit the plan yourself.
@@ -61,7 +69,7 @@ Reach this step only once every finding is applied (step 3 gate). Iterate build 
 
 ### 5. Spawn the reviewer
 
-Before spawning, update the target phase's block in `progress.json`: set `sub_state: "inner-review"`; on cycles ≥ 2 increment `cycle`; append activity `"inner-review pass requested (cycle K)"`. Bake.
+**Pre-spawn write (gate – do this before the Agent tool call, not after).** Edit `{{plan_progress_path}}`: set `sub_state: "inner-review"`; on cycles ≥ 2 increment `cycle`; append activity `{role: "implementer", msg: "inner-review pass requested (cycle K)"}`; refresh `updated_at`. Bake. Only then spawn the agent. The user must see the cycle change in their browser before the reviewer goes silent for a few minutes.
 
 Spawn the `review-iterate` agent (`.claude/agents/review-iterate.md`). Prompt:
 
@@ -71,7 +79,13 @@ Hand the reviewer the original findings list to verify against — not an accoun
 
 ### 6. Implement reviewer findings + re-spawn
 
-For each non-trivial finding the reviewer returned, append an activity entry to `progress.json` with `role: "inner-review"` and a short `msg` like `finding[<SEV>] <file:line> <summary>`. Set `sub_state: "applying-fixes"`. Bake.
+**Post-review write (gate – do this before the first code edit in response to findings).** When the reviewer returns, edit `{{plan_progress_path}}` in a single write:
+- Set `sub_state: "applying-fixes"`.
+- Append one activity entry per non-trivial finding: `{role: "inner-review", msg: "finding[<SEV>] <file:line> <one-line summary>"}`. Skip pure NITs, keep everything else.
+- If every returned finding is `[DOC]`/`[SHARED]`/NIT and there is no code work to do, set `sub_state: "ready"` instead and skip to step 7.
+- Refresh `updated_at`. Bake.
+
+Only then start editing code.
 
 Same three-category protocol as `/implement-phase`:
 
@@ -79,11 +93,13 @@ Same three-category protocol as `/implement-phase`:
 - **`[DOC]` findings**: relay to user, do not edit docs.
 - **`[SHARED]` findings**: collect for the shared-library suggestions file.
 
-Re-spawn the reviewer after each fix batch. Iterate until clean (zero BLOCKER/MAJOR/non-`[DOC]`-non-`[SHARED]` MINOR). On the clean pass, set `sub_state: "ready"` and bake.
+**Fix-batch write (gate – do this before rebuilding).** Once a batch of fixes is on disk, edit `{{plan_progress_path}}`: append `{role: "implementer", msg: "applied N fixes for cycle K: <one-line scope>"}`; refresh notes on affected Work/Files items; refresh `updated_at`. Bake. Then rebuild.
+
+Re-spawn the reviewer after each fix batch (re-apply the step-5 pre-spawn write: increment `cycle`, set `sub_state: "inner-review"`, append the cycle activity, bake). Iterate until clean (zero BLOCKER/MAJOR/non-`[DOC]`-non-`[SHARED]` MINOR). On the clean pass, edit `{{plan_progress_path}}`: set `sub_state: "ready"`; append `{role: "inner-review", msg: "clean on cycle K"}`; refresh `updated_at`. Bake.
 
 **Repeated-feedback discipline**: if the reviewer reports the same finding across two cycles, address the exact `file:line` they cited before doing any other work.
 
-**Cycle cap: 10 implementer cycles.** After 10 rounds without approval, stop and surface the situation.
+**Cycle cap: 10 implementer cycles.** After 10 rounds without approval, stop, set `sub_state: "blocked"` in `{{plan_progress_path}}` with an activity `{role: "implementer", msg: "cycle cap hit – escalating"}`, bake, and surface the situation.
 
 ### 7. Commit
 
@@ -94,7 +110,7 @@ git commit -m "Apply fixes: <short summary>"
 
 No `git add -A`, no `--no-verify`. Do not push.
 
-After the commit, append activity `"committed <short-sha>"` to `progress.json` and bake. Leave `sub_state: "ready"` – the outer reviewer (`review-implementation`) is what promotes the phase to `completed` and clears the progress block.
+After the commit, edit `{{plan_progress_path}}`: append `{role: "implementer", msg: "committed <short-sha>"}`; refresh `updated_at`. Bake. Leave `sub_state: "ready"` – the outer reviewer (`review-implementation`) is what promotes the phase to `completed` and clears the progress block.
 
 ### 8. Update this command, implement-phase, and review-iterate (mandatory last step before reporting)
 
@@ -112,4 +128,4 @@ This step is **mandatory** before reporting. If nothing is genuinely worth chang
 
 ### 9. Report
 
-One-line summary plus the consolidated list of `[DOC]` findings collected across all review passes, plus any `[SHARED]` findings written. Include the rendered HTML location (`{{plan_path}}.html`) and any `proposed_decisions` you appended to `progress.json` during the run.
+One-line summary plus the consolidated list of `[DOC]` findings collected across all review passes, plus any `[SHARED]` findings written. Include the rendered HTML location (`{{plan_html_path}}`) and any `proposed_decisions` you appended to `progress.json` during the run.

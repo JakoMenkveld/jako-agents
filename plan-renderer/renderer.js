@@ -14,6 +14,7 @@ const SUB_STATE_LABEL = {
   "inner-review": "inner review",
   "applying-fixes": "applying fixes",
   "ready": "ready for outer review",
+  "blocked": "blocked",
 };
 
 const LIFECYCLE_LABEL = {
@@ -391,7 +392,7 @@ function renderPhasesPanel(plan) {
 }
 
 function renderPhase(phase, state, plan) {
-  const expanded = state === "current";
+  const expanded = readExpandState(phase.num, state === "current");
   const card = el("article", { className: `card phase phase-${state}`, "data-phase": phase.num });
 
   // Header (always visible)
@@ -402,10 +403,9 @@ function renderPhase(phase, state, plan) {
     onClick: (e) => {
       const c = e.currentTarget.parentElement;
       c.classList.toggle("collapsed");
-      e.currentTarget.setAttribute(
-        "aria-expanded",
-        c.classList.contains("collapsed") ? "false" : "true"
-      );
+      const nowExpanded = !c.classList.contains("collapsed");
+      e.currentTarget.setAttribute("aria-expanded", nowExpanded ? "true" : "false");
+      writeExpandState(phase.num, nowExpanded);
     },
   }, [
     el("span", { className: "phase-num" }, `Phase ${phase.num}`),
@@ -447,17 +447,21 @@ function renderPhase(phase, state, plan) {
 
 function renderLivePanel(phase) {
   const p = phase.progress;
-  const live = el("div", { className: "live-panel" });
+  const sub = p.sub_state || "idle";
+  const live = el("div", { className: `live-panel live-sub-${sub}` });
   const head = el("div", { className: "live-head" }, [
-    el("span", { className: "live-label" }, "Live"),
+    el("span", { className: "live-label" }, SUB_STATE_LABEL[sub] || sub),
     el("span", { className: "live-sub" }, [
       el("span", { className: "live-meta" }, [
         el("span", { className: "live-meta-k" }, "sub-state"),
-        el("span", { className: `live-substate sub-${p.sub_state}` }, SUB_STATE_LABEL[p.sub_state] || p.sub_state),
+        el("span", { className: `live-substate sub-${sub}` }, SUB_STATE_LABEL[sub] || sub),
       ]),
       el("span", { className: "live-meta" }, [
         el("span", { className: "live-meta-k" }, "cycle"),
-        el("span", {}, `${p.cycle} / ${p.cycle_cap}`),
+        el("span", { className: "live-cycle" }, [
+          el("span", { className: "live-cycle-k" }, String(p.cycle ?? 1)),
+          el("span", { className: "live-cycle-cap" }, ` / ${p.cycle_cap ?? 10}`),
+        ]),
       ]),
       el("span", { className: "live-meta" }, [
         el("span", { className: "live-meta-k" }, "started"),
@@ -471,10 +475,17 @@ function renderLivePanel(phase) {
   ]);
   live.appendChild(head);
 
-  // Activity log
+  // Activity log – newest first regardless of write order. Implementers
+  // append; the renderer sorts so a single forgotten prepend doesn't
+  // bury the latest entry.
   if (p.activity?.length) {
     const log = el("ol", { className: "activity-log" });
-    for (const ev of p.activity) {
+    const sorted = [...p.activity].sort((a, b) => {
+      const ta = a.at ? new Date(a.at).getTime() : 0;
+      const tb = b.at ? new Date(b.at).getTime() : 0;
+      return tb - ta;
+    });
+    for (const ev of sorted) {
       log.appendChild(el("li", { className: `activity activity-${ev.role}` }, [
         el("span", { className: "activity-time" }, fmtClock(ev.at)),
         el("span", { className: "activity-role" }, ev.role),
@@ -789,18 +800,49 @@ function scheduleReload(sec) {
   if (_reloadTimer) { clearTimeout(_reloadTimer); _reloadTimer = null; }
   if (sec > 0) {
     _reloadTimer = setTimeout(() => {
-      sessionStorage.setItem("plan-renderer-scroll", String(window.scrollY));
+      saveScroll();
       location.reload();
     }, sec * 1000);
   }
 }
 
+// Save on every unload (auto-refresh, F5, Ctrl+R, navigating away) so the
+// scroll position survives both the timer-driven reload and a manual one.
+function saveScroll() {
+  try { sessionStorage.setItem("plan-renderer-scroll", String(window.scrollY)); } catch {}
+}
+function initScrollPersistence() {
+  window.addEventListener("beforeunload", saveScroll);
+  window.addEventListener("pagehide", saveScroll);
+}
+
 function restoreScroll() {
   const y = parseInt(sessionStorage.getItem("plan-renderer-scroll") || "0", 10);
   if (y > 0) {
-    sessionStorage.removeItem("plan-renderer-scroll");
     requestAnimationFrame(() => window.scrollTo(0, y));
   }
+}
+
+// Expand/collapse persistence – sessionStorage keyed by phase number,
+// so each phase remembers its open/closed state across refreshes.
+// Defaults (used when no entry exists yet) come from the caller –
+// typically "open if this is the current phase, closed otherwise".
+const EXPAND_KEY = "plan-renderer-expand";
+function readExpandMap() {
+  try {
+    const raw = sessionStorage.getItem(EXPAND_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+function readExpandState(phaseNum, fallback) {
+  const map = readExpandMap();
+  const v = map[String(phaseNum)];
+  return typeof v === "boolean" ? v : !!fallback;
+}
+function writeExpandState(phaseNum, expanded) {
+  const map = readExpandMap();
+  map[String(phaseNum)] = !!expanded;
+  try { sessionStorage.setItem(EXPAND_KEY, JSON.stringify(map)); } catch {}
 }
 
 // ─── Boot ────────────────────────────────────────────────────────────────
@@ -855,6 +897,10 @@ async function loadSources() {
 async function boot() {
   initThemeToggle();
   initRefreshToggle();
+  initScrollPersistence();
+  // Browsers default to "auto" scroll restoration on history navigation,
+  // which can fight our sessionStorage-driven restore. Disable it.
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
   const root = document.getElementById("plan-root");
   root.innerHTML = '<p class="muted">loading…</p>';
