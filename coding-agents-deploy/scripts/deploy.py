@@ -53,6 +53,23 @@ MANAGED_SCAFFOLD_DIRS = (".claude", ".agents", ".deployed-agents")
 # the Codex side in the coder lane; all of its files (commands + skill shim, both
 # sides) stay tracked.
 TRACKED_WORKFLOW_NAMES = {"commit-and-sync"}
+# Files where the deploy template is the single source of truth. They are
+# generated/packaged artifacts (e.g. the self-contained plan-renderer/bake.py),
+# so the deploy overwrites them on every run instead of merging or asking. No
+# backup is written – the prior bake is reproducible from the source repo.
+ALWAYS_REFRESH_PARENTS: tuple[Path, ...] = (
+    Path(".deployed-agents/plan-renderer"),
+)
+
+
+def is_always_refresh(rel: Path) -> bool:
+    for parent in ALWAYS_REFRESH_PARENTS:
+        try:
+            rel.relative_to(parent)
+            return True
+        except ValueError:
+            continue
+    return False
 
 
 def is_tracked_workflow(rel: Path) -> bool:
@@ -544,6 +561,19 @@ def deploy_tree(template_root: Path, target: Path, subs: dict[str, str],
             summary.append(f"  {'CREATE':<35} {rel}")
             if not dry_run:
                 write_text(dest, rendered)
+            continue
+
+        if is_always_refresh(rel):
+            # Generated artifact owned by the deploy template. Bypass merge and
+            # backup – the template is authoritative, the local copy is stale
+            # if it differs.
+            existing = read_text(dest)
+            if normalize_text_for_compare(existing) == normalize_text_for_compare(rendered):
+                summary.append(f"  {'UNCHANGED':<35} {rel}")
+            else:
+                summary.append(f"  {'REFRESH':<35} {rel}")
+                if not dry_run:
+                    write_text(dest, rendered)
             continue
 
         if not merge_existing:

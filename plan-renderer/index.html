@@ -12,10 +12,39 @@
 </head>
 <body>
   <div class="app-bar">
-    <span class="app-title">plan-renderer</span>
-    <div class="controls">
-      <button id="refresh-toggle" class="btn btn-ghost" type="button">auto-refresh: off</button>
-      <button id="theme-toggle" class="btn btn-ghost" type="button">dark mode</button>
+    <div class="app-bar-top">
+      <span class="app-title">plan-renderer</span>
+      <div class="controls">
+        <button id="refresh-toggle" class="btn btn-ghost" type="button">auto-refresh: off</button>
+        <button id="theme-toggle" class="btn btn-ghost" type="button">dark mode</button>
+      </div>
+    </div>
+    <div class="legend" aria-label="status legend">
+      <div class="legend-row">
+        <span class="legend-row-label">Phase</span>
+        <span class="legend-item"><span class="legend-swatch pending"></span>pending</span>
+        <span class="legend-item"><span class="legend-swatch current"></span>current</span>
+        <span class="legend-item"><span class="legend-swatch under-review"></span>under-review</span>
+        <span class="legend-item"><span class="legend-swatch needs-fixes"></span>needs-fixes</span>
+        <span class="legend-item"><span class="legend-swatch completed"></span>completed</span>
+        <span class="legend-item"><span class="legend-swatch blocked"></span>blocked</span>
+      </div>
+      <div class="legend-row">
+        <span class="legend-row-label">Item</span>
+        <span class="legend-item"><span class="legend-swatch pending"></span>pending</span>
+        <span class="legend-item"><span class="legend-swatch in-progress"></span>in-progress</span>
+        <span class="legend-item"><span class="legend-swatch done"></span>done</span>
+        <span class="legend-item"><span class="legend-swatch blocked"></span>blocked</span>
+      </div>
+      <div class="legend-row">
+        <span class="legend-row-label">Live</span>
+        <span class="legend-item"><span class="legend-swatch idle"></span>idle</span>
+        <span class="legend-item"><span class="legend-swatch coding"></span>coding</span>
+        <span class="legend-item"><span class="legend-swatch inner-review"></span>inner-review</span>
+        <span class="legend-item"><span class="legend-swatch applying-fixes"></span>applying-fixes</span>
+        <span class="legend-item"><span class="legend-swatch ready"></span>ready</span>
+        <span class="legend-item"><span class="legend-swatch blocked"></span>blocked</span>
+      </div>
     </div>
   </div>
   <main id="plan-root"></main>

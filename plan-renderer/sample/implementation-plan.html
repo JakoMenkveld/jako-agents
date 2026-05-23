@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-omnis-palette="black-silver">
 <head>
-  <!-- baked from implementation-plan.md + implementation-plan.progress.json at 2026-05-23T02:41:30Z -->
+  <!-- baked from implementation-plan.md + implementation-plan.progress.json at 2026-05-23T03:31:40Z -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Plan Renderer</title>
@@ -179,13 +179,12 @@ code { background: var(--surface); padding: 0 .25em; border-radius: 3px; }
 /* ─── Semantic status palette (light) ───────────────────────────
  *
  * Each named state has three rgba variants: solid text colour, soft
- * background, and ~30% border. Names cover lifecycle (pending,
- * current, under-review, needs-fixes, completed, blocked), item
- * (pending, in-progress, done, blocked), sub-state (idle, coding,
- * inner-review, applying-fixes, ready, blocked), and activity role
- * (implementer, reviewer; inner-review reuses the sub-state colour).
- *
- * Aliases keep markup terse: done = completed, idle = pending. */
+ * background, and ~30% border. Every distinct state gets its own hue
+ * so the user never has to disambiguate "which kind of done is this"
+ * from context alone. The only deliberate aliases are:
+ *   – pending == idle (semantically identical: "not started")
+ *   – blocked is one colour across all three layers (a phase, item
+ *     or sub-state is blocked is blocked) */
 
 :root {
   /* pending / idle – slate */
@@ -193,59 +192,68 @@ code { background: var(--surface); padding: 0 .25em; border-radius: 3px; }
   --st-pending-bg:        rgba(100,116,139,0.10);
   --st-pending-border:    rgba(100,116,139,0.32);
 
-  /* current (phase live) – sky */
+  /* current (phase lifecycle: this phase is live) – sky */
   --st-current:           #0284C7;
   --st-current-bg:        rgba(2,132,199,0.10);
   --st-current-border:    rgba(2,132,199,0.32);
 
-  /* in-progress (item) – amber */
+  /* in-progress (item: this bullet is being worked on) – amber */
   --st-in-progress:       #D97706;
   --st-in-progress-bg:    rgba(217,119,6,0.10);
   --st-in-progress-border:rgba(217,119,6,0.32);
 
-  /* done / completed – emerald */
-  --st-done:              #059669;
-  --st-done-bg:           rgba(5,150,105,0.10);
-  --st-done-border:       rgba(5,150,105,0.32);
+  /* done (item: bullet finished on disk, pre-review) – emerald */
+  --st-done:              #10B981;
+  --st-done-bg:           rgba(16,185,129,0.10);
+  --st-done-border:       rgba(16,185,129,0.32);
 
-  /* blocked – crimson */
+  /* ready (sub-state: inner-review loop is clean, awaiting outer
+     review) – lime; sits between done (item) and completed (lifecycle) */
+  --st-ready:             #65A30D;
+  --st-ready-bg:          rgba(101,163,13,0.10);
+  --st-ready-border:      rgba(101,163,13,0.32);
+
+  /* completed (phase lifecycle: outer reviewer signed off, terminal) –
+     deep emerald, darker than item done for terminal weight */
+  --st-completed:         #047857;
+  --st-completed-bg:      rgba(4,120,87,0.12);
+  --st-completed-border:  rgba(4,120,87,0.40);
+
+  /* blocked (any layer) – crimson */
   --st-blocked:           #DC2626;
   --st-blocked-bg:        rgba(220,38,38,0.12);
   --st-blocked-border:    rgba(220,38,38,0.35);
 
-  /* under-review (phase) – indigo */
-  --st-under-review:      #6366F1;
-  --st-under-review-bg:   rgba(99,102,241,0.10);
-  --st-under-review-border:rgba(99,102,241,0.32);
+  /* under-review (phase lifecycle: outer reviewer running) – indigo */
+  --st-under-review:      #4F46E5;
+  --st-under-review-bg:   rgba(79,70,229,0.10);
+  --st-under-review-border:rgba(79,70,229,0.32);
 
-  /* needs-fixes (phase) – orange */
+  /* inner-review (sub-state: review-iterate running) – violet,
+     intentionally distinct from under-review indigo */
+  --st-inner-review:      #7C3AED;
+  --st-inner-review-bg:   rgba(124,58,237,0.10);
+  --st-inner-review-border:rgba(124,58,237,0.32);
+
+  /* needs-fixes (phase lifecycle: outer review left findings) – orange */
   --st-needs-fixes:       #EA580C;
   --st-needs-fixes-bg:    rgba(234,88,12,0.10);
   --st-needs-fixes-border:rgba(234,88,12,0.32);
 
-  /* coding (sub-state) – teal */
+  /* applying-fixes (sub-state: implementer is consuming inner-review
+     findings) – magenta, intentionally distinct from needs-fixes orange */
+  --st-applying-fixes:    #DB2777;
+  --st-applying-fixes-bg: rgba(219,39,119,0.10);
+  --st-applying-fixes-border:rgba(219,39,119,0.32);
+
+  /* coding (sub-state: implementer writing code) – teal */
   --st-coding:            #0D9488;
   --st-coding-bg:         rgba(13,148,136,0.10);
   --st-coding-border:     rgba(13,148,136,0.32);
 
-  /* inner-review (sub-state + activity role) – indigo (matches under-review) */
-  --st-inner-review:      #6366F1;
-  --st-inner-review-bg:   rgba(99,102,241,0.10);
-  --st-inner-review-border:rgba(99,102,241,0.32);
-
-  /* applying-fixes (sub-state) – orange (matches needs-fixes) */
-  --st-applying-fixes:    #EA580C;
-  --st-applying-fixes-bg: rgba(234,88,12,0.10);
-  --st-applying-fixes-border:rgba(234,88,12,0.32);
-
-  /* ready (sub-state) – emerald */
-  --st-ready:             #059669;
-  --st-ready-bg:          rgba(5,150,105,0.10);
-  --st-ready-border:      rgba(5,150,105,0.32);
-
   /* activity roles */
   --st-implementer:       #0D9488;   /* teal, matches coding */
-  --st-reviewer:          #7C3AED;   /* violet for the outer reviewer */
+  --st-reviewer:          #1E40AF;   /* navy, distinct from current sky */
 }
 
 /* Dark-mode overrides – brighter, lower-saturation pastel variants so
@@ -267,48 +275,65 @@ code { background: var(--surface); padding: 0 .25em; border-radius: 3px; }
   --st-done-bg:           rgba(52,211,153,0.14);
   --st-done-border:       rgba(52,211,153,0.30);
 
+  --st-ready:             #A3E635;
+  --st-ready-bg:          rgba(163,230,53,0.14);
+  --st-ready-border:      rgba(163,230,53,0.32);
+
+  --st-completed:         #059669;
+  --st-completed-bg:      rgba(5,150,105,0.18);
+  --st-completed-border:  rgba(5,150,105,0.42);
+
   --st-blocked:           #FB7185;
   --st-blocked-bg:        rgba(251,113,133,0.16);
   --st-blocked-border:    rgba(251,113,133,0.35);
 
-  --st-under-review:      #A5B4FC;
-  --st-under-review-bg:   rgba(165,180,252,0.14);
-  --st-under-review-border:rgba(165,180,252,0.30);
+  --st-under-review:      #818CF8;
+  --st-under-review-bg:   rgba(129,140,248,0.14);
+  --st-under-review-border:rgba(129,140,248,0.30);
+
+  --st-inner-review:      #C4B5FD;
+  --st-inner-review-bg:   rgba(196,181,253,0.14);
+  --st-inner-review-border:rgba(196,181,253,0.30);
 
   --st-needs-fixes:       #FB923C;
   --st-needs-fixes-bg:    rgba(251,146,60,0.14);
   --st-needs-fixes-border:rgba(251,146,60,0.30);
 
+  --st-applying-fixes:    #F472B6;
+  --st-applying-fixes-bg: rgba(244,114,182,0.14);
+  --st-applying-fixes-border:rgba(244,114,182,0.32);
+
   --st-coding:            #5EEAD4;
   --st-coding-bg:         rgba(94,234,212,0.13);
   --st-coding-border:     rgba(94,234,212,0.30);
 
-  --st-inner-review:      #A5B4FC;
-  --st-inner-review-bg:   rgba(165,180,252,0.14);
-  --st-inner-review-border:rgba(165,180,252,0.30);
-
-  --st-applying-fixes:    #FB923C;
-  --st-applying-fixes-bg: rgba(251,146,60,0.14);
-  --st-applying-fixes-border:rgba(251,146,60,0.30);
-
-  --st-ready:             #34D399;
-  --st-ready-bg:          rgba(52,211,153,0.14);
-  --st-ready-border:      rgba(52,211,153,0.30);
-
   --st-implementer:       #5EEAD4;
-  --st-reviewer:          #C4B5FD;
+  --st-reviewer:          #60A5FA;
 }
 
 /* ─── App chrome ──────────────────────────────────────────────── */
 
+/* The bar pins to the top of the viewport so the legend is always
+   in view while the user scrolls through phases. Box-shadow gives a
+   subtle separation when content scrolls under it. */
 .app-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 24px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 24px 8px;
   background: var(--sidebar);
   color: var(--on-sidebar);
   border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+}
+.app-bar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 .app-bar .app-title {
   font-weight: 600;
@@ -317,6 +342,65 @@ code { background: var(--surface); padding: 0 .25em; border-radius: 3px; }
   color: var(--on-sidebar-active);
 }
 .app-bar .controls { display: flex; gap: 8px; }
+
+/* Legend – three rows (Phase / Item / Live), each a wrapping flex
+   of `swatch + label` pills. Stays inside .app-bar so it scrolls
+   with the title bar (i.e. it's always visible). */
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+.legend-row-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 600;
+  color: var(--on-sidebar);
+  min-width: 42px;
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--on-sidebar);
+  white-space: nowrap;
+}
+.legend-swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.legend-swatch.completed {
+  /* terminal lifecycle state gets a thicker ring so it visually reads
+     as "sealed" vs the lighter item-done dot */
+  box-shadow: 0 0 0 1.5px var(--st-completed-border) inset;
+}
+
+.legend-swatch.pending        { background: var(--st-pending); }
+.legend-swatch.current        { background: var(--st-current); }
+.legend-swatch.in-progress    { background: var(--st-in-progress); }
+.legend-swatch.done           { background: var(--st-done); }
+.legend-swatch.ready          { background: var(--st-ready); }
+.legend-swatch.completed      { background: var(--st-completed); }
+.legend-swatch.blocked        { background: var(--st-blocked); }
+.legend-swatch.under-review   { background: var(--st-under-review); }
+.legend-swatch.inner-review   { background: var(--st-inner-review); }
+.legend-swatch.needs-fixes    { background: var(--st-needs-fixes); }
+.legend-swatch.applying-fixes { background: var(--st-applying-fixes); }
+.legend-swatch.coding         { background: var(--st-coding); }
+.legend-swatch.idle           { background: var(--st-pending); }
 
 main {
   padding: 24px;
@@ -392,6 +476,9 @@ main {
   fill: #FFFFFF !important;
 }
 
+/* Phase-level completion in Mermaid uses the deep terminal emerald.
+   `done` is a legacy alias for `completed` at the phase level – Mermaid
+   nodes don't represent items, so this is the lifecycle colour. */
 .mermaid-rendered g.node.done > rect,
 .mermaid-rendered g.node.completed > rect,
 .mermaid-rendered g.node.done > polygon,
@@ -402,8 +489,8 @@ main {
 .mermaid-rendered g.node.completed > circle,
 .mermaid-rendered g.node.done > ellipse,
 .mermaid-rendered g.node.completed > ellipse {
-  fill: var(--st-done) !important;
-  stroke: var(--st-done) !important;
+  fill: var(--st-completed) !important;
+  stroke: var(--st-completed) !important;
 }
 
 .mermaid-rendered g.node.current > rect,
@@ -496,16 +583,23 @@ main {
 }
 
 /* lifecycle */
-.chip-pending      { color: var(--st-pending);      background: var(--st-pending-bg);      border-color: var(--st-pending-border); }
-.chip-current      { color: var(--st-current);      background: var(--st-current-bg);      border-color: var(--st-current-border); }
-.chip-under-review { color: var(--st-under-review); background: var(--st-under-review-bg); border-color: var(--st-under-review-border); }
-.chip-needs-fixes  { color: var(--st-needs-fixes);  background: var(--st-needs-fixes-bg);  border-color: var(--st-needs-fixes-border); }
-.chip-completed    { color: var(--st-done);         background: var(--st-done-bg);         border-color: var(--st-done-border); }
-.chip-blocked      { color: var(--st-blocked);      background: var(--st-blocked-bg);      border-color: var(--st-blocked-border); }
+.chip-pending      { color: var(--st-pending);        background: var(--st-pending-bg);        border-color: var(--st-pending-border); }
+.chip-current      { color: var(--st-current);        background: var(--st-current-bg);        border-color: var(--st-current-border); }
+.chip-under-review { color: var(--st-under-review);   background: var(--st-under-review-bg);   border-color: var(--st-under-review-border); }
+.chip-needs-fixes  { color: var(--st-needs-fixes);    background: var(--st-needs-fixes-bg);    border-color: var(--st-needs-fixes-border); }
+.chip-completed    { color: var(--st-completed);      background: var(--st-completed-bg);      border-color: var(--st-completed-border); }
+.chip-blocked      { color: var(--st-blocked);        background: var(--st-blocked-bg);        border-color: var(--st-blocked-border); }
 
 /* item state */
-.chip-in-progress  { color: var(--st-in-progress);  background: var(--st-in-progress-bg);  border-color: var(--st-in-progress-border); }
-.chip-done         { color: var(--st-done);         background: var(--st-done-bg);         border-color: var(--st-done-border); }
+.chip-in-progress  { color: var(--st-in-progress);    background: var(--st-in-progress-bg);    border-color: var(--st-in-progress-border); }
+.chip-done         { color: var(--st-done);           background: var(--st-done-bg);           border-color: var(--st-done-border); }
+
+/* sub-state */
+.chip-idle           { color: var(--st-pending);        background: var(--st-pending-bg);        border-color: var(--st-pending-border); }
+.chip-coding         { color: var(--st-coding);         background: var(--st-coding-bg);         border-color: var(--st-coding-border); }
+.chip-inner-review   { color: var(--st-inner-review);   background: var(--st-inner-review-bg);   border-color: var(--st-inner-review-border); }
+.chip-applying-fixes { color: var(--st-applying-fixes); background: var(--st-applying-fixes-bg); border-color: var(--st-applying-fixes-border); }
+.chip-ready          { color: var(--st-ready);          background: var(--st-ready-bg);          border-color: var(--st-ready-border); }
 
 /* ─── Phase cards ─────────────────────────────────────────────── */
 
@@ -520,7 +614,7 @@ main {
 .phase-current      { border-left-color: var(--st-current-border); }
 .phase-under-review { border-left-color: var(--st-under-review-border); }
 .phase-needs-fixes  { border-left-color: var(--st-needs-fixes-border); }
-.phase-completed    { border-left-color: var(--st-done-border); }
+.phase-completed    { border-left-color: var(--st-completed-border); }
 .phase-blocked      { border-left-color: var(--st-blocked-border); }
 
 .phase-head {
@@ -954,10 +1048,39 @@ main {
 </head>
 <body>
   <div class="app-bar">
-    <span class="app-title">plan-renderer</span>
-    <div class="controls">
-      <button id="refresh-toggle" class="btn btn-ghost" type="button">auto-refresh: off</button>
-      <button id="theme-toggle" class="btn btn-ghost" type="button">dark mode</button>
+    <div class="app-bar-top">
+      <span class="app-title">plan-renderer</span>
+      <div class="controls">
+        <button id="refresh-toggle" class="btn btn-ghost" type="button">auto-refresh: off</button>
+        <button id="theme-toggle" class="btn btn-ghost" type="button">dark mode</button>
+      </div>
+    </div>
+    <div class="legend" aria-label="status legend">
+      <div class="legend-row">
+        <span class="legend-row-label">Phase</span>
+        <span class="legend-item"><span class="legend-swatch pending"></span>pending</span>
+        <span class="legend-item"><span class="legend-swatch current"></span>current</span>
+        <span class="legend-item"><span class="legend-swatch under-review"></span>under-review</span>
+        <span class="legend-item"><span class="legend-swatch needs-fixes"></span>needs-fixes</span>
+        <span class="legend-item"><span class="legend-swatch completed"></span>completed</span>
+        <span class="legend-item"><span class="legend-swatch blocked"></span>blocked</span>
+      </div>
+      <div class="legend-row">
+        <span class="legend-row-label">Item</span>
+        <span class="legend-item"><span class="legend-swatch pending"></span>pending</span>
+        <span class="legend-item"><span class="legend-swatch in-progress"></span>in-progress</span>
+        <span class="legend-item"><span class="legend-swatch done"></span>done</span>
+        <span class="legend-item"><span class="legend-swatch blocked"></span>blocked</span>
+      </div>
+      <div class="legend-row">
+        <span class="legend-row-label">Live</span>
+        <span class="legend-item"><span class="legend-swatch idle"></span>idle</span>
+        <span class="legend-item"><span class="legend-swatch coding"></span>coding</span>
+        <span class="legend-item"><span class="legend-swatch inner-review"></span>inner-review</span>
+        <span class="legend-item"><span class="legend-swatch applying-fixes"></span>applying-fixes</span>
+        <span class="legend-item"><span class="legend-swatch ready"></span>ready</span>
+        <span class="legend-item"><span class="legend-swatch blocked"></span>blocked</span>
+      </div>
     </div>
   </div>
   <main id="plan-root"></main>
@@ -1232,7 +1355,7 @@ _(none — telemetry/log/blob architecture is intentionally stubbed and deferred
   }
 }
 </script>
-  <script id="plan-bake-meta" type="application/json">{"baked_at": "2026-05-23T02:41:30Z", "plan": "implementation-plan.md", "progress": "implementation-plan.progress.json"}</script>
+  <script id="plan-bake-meta" type="application/json">{"baked_at": "2026-05-23T03:31:40Z", "plan": "implementation-plan.md", "progress": "implementation-plan.progress.json"}</script>
   <script id="renderer-js">// plan-renderer: turn a Plan-Contract markdown + a progress.json overlay
 // into a structured, interactive HTML view.
 //
