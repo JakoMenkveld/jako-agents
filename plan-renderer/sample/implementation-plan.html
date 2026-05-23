@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-omnis-palette="black-silver">
 <head>
-  <!-- baked from implementation-plan.md + implementation-plan.progress.json at 2026-05-23T03:31:40Z -->
+  <!-- baked from implementation-plan.md + implementation-plan.progress.json at 2026-05-23T03:52:26Z -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Plan Renderer</title>
@@ -166,7 +166,7 @@ html, body {
   background: var(--bg);
   color: var(--text);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.5;
 }
 
@@ -337,7 +337,7 @@ code { background: var(--surface); padding: 0 .25em; border-radius: 3px; }
 }
 .app-bar .app-title {
   font-weight: 600;
-  font-size: 16px;
+  font-size: 18px;
   letter-spacing: .02em;
   color: var(--on-sidebar-active);
 }
@@ -350,7 +350,7 @@ code { background: var(--surface); padding: 0 .25em; border-radius: 3px; }
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.4;
 }
 .legend-row {
@@ -360,7 +360,7 @@ code { background: var(--surface); padding: 0 .25em; border-radius: 3px; }
   gap: 4px 10px;
 }
 .legend-row-label {
-  font-size: 10px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: .08em;
   font-weight: 600;
@@ -420,7 +420,7 @@ main {
 }
 .card h2 {
   margin: 0 0 12px;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   letter-spacing: .02em;
   display: flex;
@@ -433,7 +433,7 @@ main {
 .plan-intro {
   margin: 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 15px;
 }
 .phase-chips {
   display: flex;
@@ -561,7 +561,7 @@ main {
   gap: 6px;
   padding: 2px 10px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   border: 1px solid transparent;
   background: var(--st-pending-bg);
@@ -577,7 +577,7 @@ main {
 }
 .chip-tiny {
   padding: 0 8px;
-  font-size: 11px;
+  font-size: 13px;
   height: 18px;
   line-height: 18px;
 }
@@ -628,14 +628,14 @@ main {
 .phase-head:hover { background: var(--surface); }
 .phase-num {
   font-family: ui-monospace, monospace;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
   letter-spacing: .04em;
 }
 .phase-title {
   flex: 1;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text);
 }
 
@@ -652,7 +652,7 @@ main {
 .phase-intro {
   margin: 12px 0 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 15px;
 }
 .phase-intro-block {
   display: flex;
@@ -674,7 +674,7 @@ main {
   border-radius: 4px;
   padding: 10px 12px;
   overflow-x: auto;
-  font-size: 12px;
+  font-size: 14px;
   font-family: ui-monospace, monospace;
   margin: 0;
 }
@@ -693,7 +693,7 @@ main {
 
 .items-label {
   margin: 0 0 6px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: .06em;
   text-transform: uppercase;
@@ -710,7 +710,7 @@ main {
 .items-empty {
   margin: 0;
   color: var(--dim);
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .item {
@@ -753,18 +753,18 @@ main {
 
 .item-id {
   font-family: ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted);
   padding-top: 2px;
 }
 .item-text {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text);
 }
 .item-done .item-text { color: var(--muted); }
 .item-note {
   display: block;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--accent);
   margin-top: 2px;
   font-style: italic;
@@ -799,7 +799,7 @@ main {
   gap: 4px;
 }
 .live-label {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -816,11 +816,11 @@ main {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
-  font-size: 12px;
+  font-size: 14px;
 }
 .live-meta { display: inline-flex; align-items: baseline; gap: 6px; }
 .live-meta-k {
-  font-size: 10px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: .06em;
   color: var(--dim);
@@ -855,7 +855,7 @@ main {
   flex-direction: column;
   gap: 4px;
   font-family: ui-monospace, monospace;
-  font-size: 11.5px;
+  font-size: 13.5px;
   max-height: 220px;
   overflow-y: auto;
 }
@@ -888,7 +888,7 @@ main {
   gap: 8px;
 }
 .proposed-label {
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: .04em;
   color: var(--muted);
 }
@@ -898,8 +898,8 @@ main {
   border-radius: 4px;
   padding: 8px 12px;
 }
-.proposed-text { margin: 0 0 4px; font-size: 13px; }
-.proposed-just { margin: 0; font-size: 11.5px; color: var(--muted); font-style: italic; }
+.proposed-text { margin: 0 0 4px; font-size: 15px; }
+.proposed-just { margin: 0; font-size: 13.5px; color: var(--muted); font-style: italic; }
 
 /* ─── Decisions cards ─────────────────────────────────────────── */
 
@@ -919,12 +919,12 @@ main {
 }
 .decision-title {
   font-weight: 600;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text);
 }
 .decision-body {
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
   line-height: 1.45;
 }
@@ -946,8 +946,8 @@ main {
 }
 .card-half h2 { margin-bottom: 8px; }
 .card-half ul { margin: 0 0 12px 18px; padding: 0; }
-.card-half li { font-size: 13px; margin-bottom: 4px; }
-.muted { color: var(--muted); font-style: italic; font-size: 13px; }
+.card-half li { font-size: 15px; margin-bottom: 4px; }
+.muted { color: var(--muted); font-style: italic; font-size: 15px; }
 
 /* ─── Buttons ─────────────────────────────────────────────────── */
 
@@ -957,7 +957,7 @@ main {
   color: var(--on-accent);
   border: 1px solid var(--accent);
   padding: 4px 10px;
-  font-size: 12px;
+  font-size: 14px;
   border-radius: 4px;
   cursor: pointer;
   letter-spacing: .02em;
@@ -987,7 +987,7 @@ main {
   align-items: center;
   padding: 1px 8px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: .02em;
 }
@@ -1017,7 +1017,7 @@ main {
 }
 .toast-fade { opacity: 0; transform: translateY(8px); }
 .toast-label {
-  font-size: 11px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: .06em;
   color: var(--st-current);
@@ -1028,7 +1028,7 @@ main {
   padding: 8px 10px;
   background: var(--surface);
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 14px;
   font-family: ui-monospace, monospace;
   white-space: pre-wrap;
   max-height: 160px;
@@ -1355,7 +1355,7 @@ _(none — telemetry/log/blob architecture is intentionally stubbed and deferred
   }
 }
 </script>
-  <script id="plan-bake-meta" type="application/json">{"baked_at": "2026-05-23T03:31:40Z", "plan": "implementation-plan.md", "progress": "implementation-plan.progress.json"}</script>
+  <script id="plan-bake-meta" type="application/json">{"baked_at": "2026-05-23T03:52:26Z", "plan": "implementation-plan.md", "progress": "implementation-plan.progress.json"}</script>
   <script id="renderer-js">// plan-renderer: turn a Plan-Contract markdown + a progress.json overlay
 // into a structured, interactive HTML view.
 //

@@ -136,10 +136,10 @@ The reviewer returned a list of findings. YOU (the main conversation) implement 
 - `[DOC]` findings are NOT blockers for the review gate.
 - **Never report completion status as a finding.** Filter out any `[ ]`/`[x]` or phase `✅` bookkeeping before relaying.
 
-**Shared-library suggestions (collect, do NOT implement here):**
-- Findings tagged `[SHARED]` are suggestions for a separate shared-library or component-repo improvement.
-- Accumulate all `[SHARED]` findings across review passes.
-- After the review loop is clean, write them to a `suggested_improvements.md` file in the shared-library repo (see step 8). The user can tell you which repo – if unspecified, accumulate them and ask.
+**Overlay-improvement suggestions (collect, surface in the report):**
+- Findings tagged `[SHARED]` are suggestions for the deployed coding-agent overlay itself – this `implement-phase.md`, `implement-fixes.md`, `review-iterate.md`, `.deployed-agents/conventions.md`, or a deployed skill.
+- Accumulate every `[SHARED]` finding across review passes.
+- Surface them verbatim in the final report (step 11). The user feeds them upstream to the source repo for the coding-agent overlay. Do NOT edit any overlay file yourself and do NOT write `[SHARED]` findings to a separate file.
 
 ### 7. Re-spawn the reviewer
 
@@ -153,19 +153,9 @@ When the reviewer reports clean, edit `{{plan_progress_path}}`: set `sub_state: 
 
 **Cycle cap: 10 implementer cycles.** If you've done 10 rounds without approval, stop, set `sub_state: "blocked"` in `{{plan_progress_path}}` with an activity `{role: "implementer", msg: "cycle cap hit – escalating"}`, bake, and surface the situation to the user – don't grind indefinitely.
 
-### 8. Write shared-library suggestions (if any)
+### 8. Surface `[SHARED]` suggestions (no file write)
 
-If the review accumulated `[SHARED]` findings, append them to the shared-library repo's `docs/suggested_improvements.md` (path the user has told you about). Format:
-
-```markdown
-## <YYYY-MM-DD> – Phase N
-
-### <affected shared component>
-
-**Workaround in {{project_name}}**: `<file>:<line>` – <one-line description>
-
-**Suggestion**: <concrete suggested improvement>
-```
+`[SHARED]` findings stay in your accumulator only. Do NOT write them to a separate file, do NOT edit any overlay file (`.deployed-agents/`, `.claude/`, `.agents/`), and do NOT push them anywhere. They land in the final report in step 11 and the user feeds them upstream to the source repo for the coding-agent overlay. This is the only allowed handling – there is no separate suggestions file.
 
 ### 9. Commit locally
 
@@ -200,7 +190,12 @@ This step is **mandatory** before reporting. If nothing is genuinely worth chang
 
 Per phase: one terse line. `Phase N (<Title>) – implemented, build clean, tests <X>/<Y>, committed <short-sha>, rendered HTML: {{plan_html_path}}.`
 
-At the end, **always output the complete list of `[DOC]` findings accumulated across all review passes.** Even if you mentioned some during earlier steps, re-list every `[DOC]` finding so the user has one consolidated list. **Also list any `[SHARED]` findings** that were written to the shared-library suggestions file.
+At the end, **always output the complete consolidated lists of `[DOC]` and `[SHARED]` findings accumulated across all review passes**, re-listed verbatim under two clearly labelled sections. Even if you mentioned items during earlier steps, re-list every one – this consolidated list IS the user's feedback from the run.
+
+- **`[DOC]` items** are suggestions for changes to `{{plan_path}}` (design sections, Files lists, `## Decisions`, etc.). The user applies them to the plan.
+- **`[SHARED]` items** are suggestions for changes to the coding-agent overlay itself (`.deployed-agents/conventions.md`, `.agents/commands/`, `.agents/agents/review-iterate.md`, etc.). The user feeds them upstream to the source repo.
+
+Implementer-side `BLOCKER`/`MAJOR`/`MINOR`/`NIT` findings are loop-internal – by the time the loop is clean, they have been fixed in code. They do NOT belong in the report. The user-facing feedback surface is `[DOC]` and `[SHARED]` only.
 
 If you appended any `proposed_decisions` to `progress.json` during the run, note them in the report so the user knows there are pending decisions for the outer reviewer to apply or reject.
 

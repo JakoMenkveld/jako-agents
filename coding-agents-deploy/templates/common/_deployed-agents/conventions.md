@@ -171,8 +171,10 @@ Reviewers use these levels — apply them to your own self-checks too.
 - **MAJOR** — missing requirement, broken behavior, race condition, code disagrees with the plan, missing test on a new code path.
 - **MINOR** — convention drift, missing non-critical test, stale documentation, narrow edge case.
 - **NIT** — cosmetic (naming, whitespace, unused import). Acceptable to leave.
-- **DOC** — documentation/plan drift only; the code is correct but a doc is stale. **Reviewers own plan/doc bookkeeping** — reviewer-role agents keep the plan and docs current, including completion-status markers (`[ ]`/`[x]`, phase `✅`/`⚠️`). Implementer/coder-role agents do not edit docs and never comment on or flag the plan's completion status (the reviewer reconciles it and does not need it pointed out); they surface other DOC findings for the reviewer.
-- **SHARED** — a pattern that should be elevated to a shared library/component. Reviewers collect these for a separate suggestions file.
+- **DOC** — a suggestion to change the **plan** (`{{plan_path}}`). The code is acceptable; the plan has drifted, is missing a Decision entry, has a stale design section, omits a file from a Phase N list, etc. Coder-role agents never edit the plan – they surface DOC findings to the reviewer/user. Never flag plan completion-status markers (`✅`/`⚠️`/`[ ]`/`[x]`); the reviewer reconciles those and does not need them pointed out.
+- **SHARED** — a suggestion to change the **deployed coding-agent overlay itself**: this `conventions.md`, an `implement-*` command, `review-iterate.md`, or a deployed skill. Use this channel when you notice the overlay missed a check that would have caught a bug, lacks a convention worth adding, or has wording that misled the implementer. Collect these and surface them in the final user-facing report; the user feeds them upstream to the source repo for the overlay. Never edit any `.deployed-agents/`, `.claude/`, or `.agents/` file yourself.
+
+**User-facing feedback is restricted to `[DOC]` and `[SHARED]`.** The other severities (`BLOCKER`/`MAJOR`/`MINOR`/`NIT`) drive the inner-review fix loop only – the implementer resolves them in code before the loop terminates. By the time the implementer reports to the user, the only feedback that remains is `[DOC]` (for the plan) and `[SHARED]` (for the overlay).
 
 ## Things you do NOT do
 

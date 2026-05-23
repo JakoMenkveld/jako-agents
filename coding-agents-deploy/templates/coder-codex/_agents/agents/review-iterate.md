@@ -25,8 +25,10 @@ Plan: `{{plan_path}}`
 - `MAJOR` — missing requirement, broken behavior, race condition, code disagrees with the plan, missing test on a new code path.
 - `MINOR` — convention drift, missing non-critical test, narrow edge case.
 - `NIT` — cosmetic. Acceptable to leave.
-- `DOC` — documentation or plan drift only. Code is acceptable but docs are stale. This is a coder-role agent: do not edit docs or completion-status markers. The reviewer owns plan/doc updates — surface the finding for the reviewer. Never comment on or flag the plan's completion status (phase `✅`/`⚠️` markers, checkbox state, status tables) — not even as a `DOC` finding. The reviewer reconciles it and does not need it pointed out.
-- `[SHARED]` tag — pattern that should be elevated to a shared library/component.
+- `DOC` — a suggestion to change the **plan** (`{{plan_path}}`). Code is acceptable but the plan is stale, missing a Decision entry, or contradicts the code. Coder-role agent: do not edit the plan. Surface the finding for the implementer to relay to the user. Never comment on or flag the plan's completion status (phase `✅`/`⚠️` markers, checkbox state, status tables) – not even as a `DOC` finding.
+- `[SHARED]` tag — a suggestion to change the **deployed coding-agent overlay itself** (this `review-iterate.md`, an `implement-*` command, `.deployed-agents/conventions.md`, or a deployed skill). Cite (a) the overlay file to change, (b) the concrete change, (c) the motivation, ideally tied to a finding from this run. The implementer collects these for the final user-facing report; the user feeds them upstream to the source repo.
+
+**User-facing feedback is `[DOC]` and `[SHARED]` only.** Other severities (`BLOCKER`/`MAJOR`/`MINOR`/`NIT` without a `[DOC]`/`[SHARED]` tag) are loop-internal – the implementer resolves them in code before the loop terminates and they are not surfaced to the user.
 
 ## Workflow
 

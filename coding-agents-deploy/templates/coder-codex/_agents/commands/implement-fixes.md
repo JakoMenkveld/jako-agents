@@ -102,7 +102,7 @@ Same three-category protocol as `/implement-phase`:
 
 - **Code findings**: you fix (BLOCKER/MAJOR always; MINOR unless they conflict with current architecture).
 - **`[DOC]` findings**: relay to user, do not edit docs.
-- **`[SHARED]` findings**: collect for the shared-library suggestions file.
+- **`[SHARED]` findings**: collect for the final user-facing report (step 9). Do NOT write them to a separate file or edit any overlay file (`.deployed-agents/`, `.claude/`, `.agents/`). The user feeds them upstream to the source repo for the coding-agent overlay.
 
 **Fix-batch write (gate – do this before rebuilding).** Once a batch of fixes is on disk, edit `{{plan_progress_path}}`: append `{role: "implementer", msg: "applied N fixes for cycle K: <one-line scope>"}`; refresh notes on affected Work/Files items; refresh `updated_at`. Bake. Then rebuild.
 
@@ -139,4 +139,11 @@ This step is **mandatory** before reporting. If nothing is genuinely worth chang
 
 ### 9. Report
 
-One-line summary plus the consolidated list of `[DOC]` findings collected across all review passes, plus any `[SHARED]` findings written. Include the rendered HTML location (`{{plan_html_path}}`) and any `proposed_decisions` you appended to `progress.json` during the run.
+One-line summary, plus the complete consolidated lists of `[DOC]` and `[SHARED]` findings accumulated across all review passes – re-listed verbatim under two clearly labelled sections. This consolidated list IS the user's feedback from the run.
+
+- **`[DOC]` items** are suggestions for changes to `{{plan_path}}`. The user applies them to the plan.
+- **`[SHARED]` items** are suggestions for changes to the coding-agent overlay itself (`.deployed-agents/conventions.md`, `.agents/commands/`, `.agents/agents/review-iterate.md`, etc.). The user feeds them upstream to the source repo.
+
+Implementer-side `BLOCKER`/`MAJOR`/`MINOR`/`NIT` findings are loop-internal – they have been fixed in code by the time the loop is clean and do NOT belong in the report. The user-facing feedback surface is `[DOC]` and `[SHARED]` only.
+
+Include the rendered HTML location (`{{plan_html_path}}`) and any `proposed_decisions` you appended to `progress.json` during the run.

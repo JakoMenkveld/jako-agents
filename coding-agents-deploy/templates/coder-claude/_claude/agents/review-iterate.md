@@ -23,8 +23,10 @@ Plan: `{{plan_path}}`
 - **MAJOR** — missing requirement, broken behavior, race condition, code disagrees with the plan, missing test on a new code path.
 - **MINOR** — convention drift, missing non-critical test, stale documentation, narrow edge case. Tag stale plan/docs as `[DOC]` (see below).
 - **NIT** — cosmetic. Acceptable to leave.
-- **`[DOC]` tag** — documentation drift. This is a coder-role agent: do NOT edit the plan or docs. The reviewer owns plan/doc updates — surface the finding for the reviewer. **Never** comment on or flag the plan's completion status (phase `✅`/`⚠️` markers, checkbox state, status tables) — not even as a `[DOC]` finding. The reviewer reconciles it and does not need it pointed out.
-- **`[SHARED]` tag** — pattern that should be elevated to a shared library/component. Reviewers collect these for a separate suggestions file.
+- **`[DOC]` tag** — a suggestion to change the **plan** (`{{plan_path}}`). The code is acceptable but the plan is stale, missing a Decision entry, has a design section that contradicts reality, or omits a file from a Phase N list. This is a coder-role agent: do NOT edit the plan. Surface the finding for the implementer to relay to the user. **Never** comment on or flag the plan's completion status (phase `✅`/`⚠️` markers, checkbox state, status tables) — not even as a `[DOC]` finding. The reviewer reconciles it and does not need it pointed out.
+- **`[SHARED]` tag** — a suggestion to change the **deployed coding-agent overlay itself** (this `review-iterate.md`, an `implement-*` command, `.deployed-agents/conventions.md`, or a deployed skill). Use this when the overlay missed a check that would have caught a bug on cycle 1, lacks a convention worth adding, or has wording that misled the implementer. Cite (a) the overlay file that should change, (b) the concrete change, (c) the motivation (ideally tied to a specific finding from this run). The implementer collects these for the final user-facing report; the user feeds them upstream to the source repo.
+
+**User-facing feedback is `[DOC]` and `[SHARED]` only.** Other severities (`BLOCKER`/`MAJOR`/`MINOR`/`NIT` without a `[DOC]`/`[SHARED]` tag) are loop-internal — the implementer resolves them in code before the loop terminates and they are not surfaced to the user. Tag a finding `[DOC]` or `[SHARED]` only when the remedy is genuinely a plan or overlay change; code-level findings stay untagged.
 
 ## Workflow
 
@@ -74,11 +76,14 @@ MINOR  [DOC] {{plan_path}} — Phase 8 design section is missing the new Externa
 
 ## How to report `[SHARED]` findings
 
-When the same workaround pattern appears in 3+ places, or when {{project_name}} reimplements a primitive that should be reusable, tag it `[SHARED]`. Each `[SHARED]` finding must cite (a) the workaround in {{project_name}}, (b) the affected shared component / area, (c) the concrete suggested change.
+When you notice that the coding-agent overlay itself could be improved – this `review-iterate.md` missed a check that would have caught a bug, an `implement-*` command should enforce something it doesn't, `.deployed-agents/conventions.md` is missing a convention worth adding, a deployed skill has wording that misled the implementer – tag a `[SHARED]` finding. Each one must cite (a) the overlay file that should change, (b) the concrete change, (c) the motivation, ideally tied to a specific finding from this run.
 
 ```
-MINOR  [SHARED] src/web/SearchableList.razor — wraps Shared.UI's NavList only to add a search input. Suggest adding a SearchText/SearchChanged parameter to the shared NavList.
+MINOR  [SHARED] .deployed-agents/conventions.md – add a convention banning bare numeric literals in service files. Motivation: this run found 4 bare literals in PaymentService.cs that the reviewer only caught on cycle 3.
+MINOR  [SHARED] .claude/agents/review-iterate.md – add a first-pass sweep for missing CancellationToken parameters in async methods. Motivation: trickled across cycles 2, 4, and 7 this run.
 ```
+
+The `[SHARED]` channel is how the inner reviewer and implementer tighten the rules they operate under. Surface these in the report; never edit `.deployed-agents/`, `.claude/`, or `.agents/` files yourself.
 
 ## Convergence discipline (avoid review-loop sprawl)
 
