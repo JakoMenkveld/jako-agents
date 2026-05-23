@@ -31,9 +31,20 @@ Parse `$ARGUMENTS` for phase numbers. If provided (e.g. `19` or `19 20 21`), spl
 
 For each target phase, read the relevant section of `{{plan_path}}`, then reconcile the plan against disk to find only what still needs implementing: for each task or file the phase calls out, check whether it already exists and satisfies the plan. Skip work that is already complete; implement only the outstanding remainder. Treat status bookkeeping only as a signal of intended scope, never edit it.
 
-Report to the user: which phases you're implementing and what each covers — and when auto-detected, which phase you chose, whether it was explicit or auto-detected and why, and what you found already done.
+Report to the user: which phases you're implementing and what each covers – and when auto-detected, which phase you chose, whether it was explicit or auto-detected and why, and what you found already done.
 
-**Plan-ambiguity stop.** Before starting, scan the target phase for unresolved open questions, TBDs, or sections explicitly flagged as needing input. If you find any — or if the current code has drifted from the plan in a way that affects this phase — stop and ask the user. Don't guess on architecture.
+**Plan-ambiguity stop.** Before starting, scan the target phase for in-phase TBDs or sections explicitly flagged as needing input. If you find any – or if the current code has drifted from the plan in a way that affects this phase – stop and ask the user. Don't guess on architecture. (Plan-wide `## Open Questions` are enforced separately by step 1.5.)
+
+### 1.5. Open-questions gate (hard stop)
+
+Read the `## Open Questions` section of `{{plan_path}}`. If it contains any non-empty bullet (a line starting with `-` that has content), **stop immediately**. Do not initialise the progress overlay, do not fetch, do not touch code. Open questions are user-owned and append-only; the implementer never edits them, but it also refuses to proceed while any are outstanding.
+
+Surface every open question to the user verbatim, then ask them to clear `## Open Questions` before re-running the command, in one of two ways:
+
+- **Resolve the question** by recording the answer in `## Decisions` and removing the bullet from `## Open Questions`; or
+- **Defer the question** by moving the bullet from `## Open Questions` to `## Residual Risks` (acknowledging the risk is being carried into implementation).
+
+This is a plan-wide gate: any open question – on the target phase or another – blocks all implementation. An empty `## Open Questions` (the heading with no bullets) is the only acceptable state.
 
 ### 2. Fetch-first
 

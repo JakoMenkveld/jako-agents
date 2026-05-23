@@ -31,6 +31,17 @@ The findings are in `$ARGUMENTS`. If they reference specific files, read those f
 
 List the findings to the user so they can confirm before you proceed, noting whether each was explicitly given or auto-derived (and from which phase).
 
+### 1.5. Open-questions gate (hard stop)
+
+Read the `## Open Questions` section of `{{plan_path}}`. If it contains any non-empty bullet (a line starting with `-` that has content), **stop immediately**. Do not write to the progress overlay, do not fetch, do not touch code. Open questions are user-owned and append-only; the implementer never edits them, but it also refuses to proceed while any are outstanding.
+
+Surface every open question to the user verbatim, then ask them to clear `## Open Questions` before re-running the command, in one of two ways:
+
+- **Resolve the question** by recording the answer in `## Decisions` and removing the bullet from `## Open Questions`; or
+- **Defer the question** by moving the bullet from `## Open Questions` to `## Residual Risks` (acknowledging the risk is being carried into the fixes).
+
+This is a plan-wide gate: any open question blocks any implementer-side work, including fix runs. An empty `## Open Questions` (the heading with no bullets) is the only acceptable state.
+
 ### 2. Fetch-first
 
 `git fetch origin && git status --short --untracked-files=all`. Untracked files belong to someone — note them but don't revert them.
