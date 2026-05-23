@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-omnis-palette="black-silver">
 <head>
-  <!-- baked from implementation-plan.md + implementation-plan.progress.json at 2026-05-23T03:52:26Z -->
+  <!-- baked from implementation-plan.md + implementation-plan.progress.json at 2026-05-23T04:18:50Z -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Plan Renderer</title>
@@ -715,24 +715,16 @@ main {
 
 .item {
   display: grid;
-  grid-template-columns: 14px 32px 1fr auto;
+  grid-template-columns: 32px 1fr auto;
   grid-template-areas:
-    "dot id  text chip"
-    ".   .   note note";
+    "id   text chip"
+    ".    note note";
   align-items: start;
   gap: 2px 8px;
   padding: 6px 8px;
   border-radius: 4px;
 }
 .item:hover { background: var(--surface); }
-.item-state-dot {
-  grid-area: dot;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  margin-top: 6px;
-  background: var(--st-pending);
-  opacity: .6;
-}
 .item-id { grid-area: id; }
 .item-text { grid-area: text; }
 .item-note { grid-area: note; }
@@ -740,15 +732,6 @@ main {
   grid-area: chip;
   align-self: start;
   white-space: nowrap;
-}
-.item-pending     .item-state-dot { background: var(--st-pending);     opacity: .35; }
-.item-in-progress .item-state-dot { background: var(--st-in-progress); animation: pulse 1.6s ease-in-out infinite; }
-.item-done        .item-state-dot { background: var(--st-done);        opacity: 1; }
-.item-blocked     .item-state-dot { background: var(--st-blocked);     opacity: 1; }
-
-@keyframes pulse {
-  0%, 100% { opacity: .55; transform: scale(1); }
-  50%      { opacity: 1;   transform: scale(1.25); }
 }
 
 .item-id {
@@ -761,7 +744,7 @@ main {
   font-size: 15px;
   color: var(--text);
 }
-.item-done .item-text { color: var(--muted); }
+.item-completed .item-text { color: var(--muted); }
 .item-note {
   display: block;
   font-size: 13px;
@@ -1355,7 +1338,7 @@ _(none — telemetry/log/blob architecture is intentionally stubbed and deferred
   }
 }
 </script>
-  <script id="plan-bake-meta" type="application/json">{"baked_at": "2026-05-23T03:52:26Z", "plan": "implementation-plan.md", "progress": "implementation-plan.progress.json"}</script>
+  <script id="plan-bake-meta" type="application/json">{"baked_at": "2026-05-23T04:18:50Z", "plan": "implementation-plan.md", "progress": "implementation-plan.progress.json"}</script>
   <script id="renderer-js">// plan-renderer: turn a Plan-Contract markdown + a progress.json overlay
 // into a structured, interactive HTML view.
 //
@@ -1788,13 +1771,13 @@ function renderPhase(phase, state, plan) {
 
   // Two-col: Work | Files
   const grid = el("div", { className: "phase-grid" });
-  grid.appendChild(renderItemList("Work", phase.work, phase.progress, phase.num, "work"));
+  grid.appendChild(renderItemList("Work", phase.work, phase.progress, phase.num, "work", state));
   const files = plan.filesByPhase[phase.num] || [];
-  grid.appendChild(renderItemList("Files", files, phase.progress, phase.num, "files"));
+  grid.appendChild(renderItemList("Files", files, phase.progress, phase.num, "files", state));
   body.appendChild(grid);
 
   // Acceptance full-width
-  body.appendChild(renderItemList("Acceptance Criteria", phase.acceptance, phase.progress, phase.num, "acceptance"));
+  body.appendChild(renderItemList("Acceptance Criteria", phase.acceptance, phase.progress, phase.num, "acceptance", state));
 
   // Actions
   body.appendChild(renderPhaseActions(phase, state));
@@ -1883,7 +1866,7 @@ function renderLivePanel(phase) {
   return live;
 }
 
-function renderItemList(label, items, progress, phaseNum, kind) {
+function renderItemList(label, items, progress, phaseNum, kind, phaseLifecycle) {
   const wrap = el("div", { className: `items items-${kind}` });
   wrap.appendChild(el("h4", { className: "items-label" }, label));
   if (!items.length) {
@@ -1892,20 +1875,51 @@ function renderItemList(label, items, progress, phaseNum, kind) {
   }
   const ul = el("ul", { className: "items-list" });
   for (const item of items) {
-    // Resolve item state from progress overlay
+    // Resolve item state from progress overlay, then map to the effective
+    // workflow state so the pill reflects "where this item sits right now"
+    // and not just "is the file on disk".
     const itemId = normalizeItemId(item.id, kind);
-    const state = progress?.items?.[itemId]?.state || "pending";
+    const rawState = progress?.items?.[itemId]?.state || "pending";
     const note = progress?.items?.[itemId]?.note;
-    ul.appendChild(el("li", { className: `item item-${state}` }, [
-      el("span", { className: "item-state-dot" }),
+    const eff = effectiveItemState(rawState, progress, phaseLifecycle);
+    ul.appendChild(el("li", { className: `item item-${eff.state}` }, [
       el("span", { className: "item-id" }, itemId),
       el("span", { className: "item-text", html: renderInline(item.text) }),
       note && el("span", { className: "item-note", html: renderInline(note) }),
-      el("span", { className: `chip chip-tiny chip-${state}` }, state),
+      el("span", { className: `chip chip-tiny chip-${eff.state}` }, eff.label),
     ]));
   }
   wrap.appendChild(ul);
   return wrap;
+}
+
+// Map a raw item state (pending | in-progress | done | blocked) plus the
+// phase's lifecycle and sub-state into a single label the user can act on.
+// Rationale: implementers flip items to "done" as soon as the file is on
+// disk, long before the inner reviewer signs off. A bare "done" pill mid
+// inner-review lies about progress – this folds the surrounding context
+// into the pill so the user sees the real story.
+function effectiveItemState(rawState, progress, phaseLifecycle) {
+  if (rawState === "blocked")     return { state: "blocked",     label: "blocked" };
+  if (rawState === "pending")     return { state: "pending",     label: "pending" };
+  if (rawState === "in-progress") return { state: "in-progress", label: "in progress" };
+
+  // rawState === "done" – fold in phase context.
+  if (phaseLifecycle === "completed")    return { state: "completed",    label: "completed" };
+  if (phaseLifecycle === "needs-fixes")  return { state: "needs-fixes",  label: "needs fixes" };
+  if (phaseLifecycle === "under-review") return { state: "under-review", label: "under review" };
+  if (phaseLifecycle === "blocked")      return { state: "blocked",      label: "blocked" };
+
+  // Phase is current (or unstarted). Defer to the live sub-state.
+  const sub = progress?.sub_state;
+  if (sub === "ready")          return { state: "ready",          label: "ready for review" };
+  if (sub === "applying-fixes") return { state: "applying-fixes", label: "applying fixes" };
+  if (sub === "inner-review")   return { state: "inner-review",   label: "in inner review" };
+
+  // sub_state coding/idle/missing – file is on disk but the inner loop
+  // hasn't seen it yet. Don't claim "done" – that word is reserved for
+  // sign-off. Show what's true: written.
+  return { state: "done", label: "written" };
 }
 
 function normalizeItemId(rawId, kind) {

@@ -430,13 +430,13 @@ function renderPhase(phase, state, plan) {
 
   // Two-col: Work | Files
   const grid = el("div", { className: "phase-grid" });
-  grid.appendChild(renderItemList("Work", phase.work, phase.progress, phase.num, "work"));
+  grid.appendChild(renderItemList("Work", phase.work, phase.progress, phase.num, "work", state));
   const files = plan.filesByPhase[phase.num] || [];
-  grid.appendChild(renderItemList("Files", files, phase.progress, phase.num, "files"));
+  grid.appendChild(renderItemList("Files", files, phase.progress, phase.num, "files", state));
   body.appendChild(grid);
 
   // Acceptance full-width
-  body.appendChild(renderItemList("Acceptance Criteria", phase.acceptance, phase.progress, phase.num, "acceptance"));
+  body.appendChild(renderItemList("Acceptance Criteria", phase.acceptance, phase.progress, phase.num, "acceptance", state));
 
   // Actions
   body.appendChild(renderPhaseActions(phase, state));
@@ -525,7 +525,7 @@ function renderLivePanel(phase) {
   return live;
 }
 
-function renderItemList(label, items, progress, phaseNum, kind) {
+function renderItemList(label, items, progress, phaseNum, kind, phaseLifecycle) {
   const wrap = el("div", { className: `items items-${kind}` });
   wrap.appendChild(el("h4", { className: "items-label" }, label));
   if (!items.length) {
@@ -534,20 +534,51 @@ function renderItemList(label, items, progress, phaseNum, kind) {
   }
   const ul = el("ul", { className: "items-list" });
   for (const item of items) {
-    // Resolve item state from progress overlay
+    // Resolve item state from progress overlay, then map to the effective
+    // workflow state so the pill reflects "where this item sits right now"
+    // and not just "is the file on disk".
     const itemId = normalizeItemId(item.id, kind);
-    const state = progress?.items?.[itemId]?.state || "pending";
+    const rawState = progress?.items?.[itemId]?.state || "pending";
     const note = progress?.items?.[itemId]?.note;
-    ul.appendChild(el("li", { className: `item item-${state}` }, [
-      el("span", { className: "item-state-dot" }),
+    const eff = effectiveItemState(rawState, progress, phaseLifecycle);
+    ul.appendChild(el("li", { className: `item item-${eff.state}` }, [
       el("span", { className: "item-id" }, itemId),
       el("span", { className: "item-text", html: renderInline(item.text) }),
       note && el("span", { className: "item-note", html: renderInline(note) }),
-      el("span", { className: `chip chip-tiny chip-${state}` }, state),
+      el("span", { className: `chip chip-tiny chip-${eff.state}` }, eff.label),
     ]));
   }
   wrap.appendChild(ul);
   return wrap;
+}
+
+// Map a raw item state (pending | in-progress | done | blocked) plus the
+// phase's lifecycle and sub-state into a single label the user can act on.
+// Rationale: implementers flip items to "done" as soon as the file is on
+// disk, long before the inner reviewer signs off. A bare "done" pill mid
+// inner-review lies about progress – this folds the surrounding context
+// into the pill so the user sees the real story.
+function effectiveItemState(rawState, progress, phaseLifecycle) {
+  if (rawState === "blocked")     return { state: "blocked",     label: "blocked" };
+  if (rawState === "pending")     return { state: "pending",     label: "pending" };
+  if (rawState === "in-progress") return { state: "in-progress", label: "in progress" };
+
+  // rawState === "done" – fold in phase context.
+  if (phaseLifecycle === "completed")    return { state: "completed",    label: "completed" };
+  if (phaseLifecycle === "needs-fixes")  return { state: "needs-fixes",  label: "needs fixes" };
+  if (phaseLifecycle === "under-review") return { state: "under-review", label: "under review" };
+  if (phaseLifecycle === "blocked")      return { state: "blocked",      label: "blocked" };
+
+  // Phase is current (or unstarted). Defer to the live sub-state.
+  const sub = progress?.sub_state;
+  if (sub === "ready")          return { state: "ready",          label: "ready for review" };
+  if (sub === "applying-fixes") return { state: "applying-fixes", label: "applying fixes" };
+  if (sub === "inner-review")   return { state: "inner-review",   label: "in inner review" };
+
+  // sub_state coding/idle/missing – file is on disk but the inner loop
+  // hasn't seen it yet. Don't claim "done" – that word is reserved for
+  // sign-off. Show what's true: written.
+  return { state: "done", label: "written" };
 }
 
 function normalizeItemId(rawId, kind) {

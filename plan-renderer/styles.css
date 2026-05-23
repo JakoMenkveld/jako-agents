@@ -566,24 +566,16 @@ main {
 
 .item {
   display: grid;
-  grid-template-columns: 14px 32px 1fr auto;
+  grid-template-columns: 32px 1fr auto;
   grid-template-areas:
-    "dot id  text chip"
-    ".   .   note note";
+    "id   text chip"
+    ".    note note";
   align-items: start;
   gap: 2px 8px;
   padding: 6px 8px;
   border-radius: 4px;
 }
 .item:hover { background: var(--surface); }
-.item-state-dot {
-  grid-area: dot;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  margin-top: 6px;
-  background: var(--st-pending);
-  opacity: .6;
-}
 .item-id { grid-area: id; }
 .item-text { grid-area: text; }
 .item-note { grid-area: note; }
@@ -591,15 +583,6 @@ main {
   grid-area: chip;
   align-self: start;
   white-space: nowrap;
-}
-.item-pending     .item-state-dot { background: var(--st-pending);     opacity: .35; }
-.item-in-progress .item-state-dot { background: var(--st-in-progress); animation: pulse 1.6s ease-in-out infinite; }
-.item-done        .item-state-dot { background: var(--st-done);        opacity: 1; }
-.item-blocked     .item-state-dot { background: var(--st-blocked);     opacity: 1; }
-
-@keyframes pulse {
-  0%, 100% { opacity: .55; transform: scale(1); }
-  50%      { opacity: 1;   transform: scale(1.25); }
 }
 
 .item-id {
@@ -612,7 +595,7 @@ main {
   font-size: 15px;
   color: var(--text);
 }
-.item-done .item-text { color: var(--muted); }
+.item-completed .item-text { color: var(--muted); }
 .item-note {
   display: block;
   font-size: 13px;
