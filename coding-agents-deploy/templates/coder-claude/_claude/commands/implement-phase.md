@@ -59,7 +59,7 @@ Run `git fetch origin && git status --short --untracked-files=all` and report wh
 For each target phase, ensure the phase's block in `{{plan_progress_path}}` exists. Create it if missing:
 - `started_at` = now (real ISO-8601 with seconds, e.g. `2026-05-23T10:14:07Z`, **not** a midnight placeholder).
 - `sub_state` = `"coding"`, `cycle` = `1`, `cycle_cap` = `10`.
-- `items` keyed off the plan's `[w*]`/`[a*]`/`[f*]` bullet IDs (all `state: "pending"` initially).
+- `items` keyed off the plan's `[w*]`/`[a*]`/`[f*]` bullet IDs, each seeded as `{ "state": "pending", "note": null }`. Seed `note` explicitly (even as `null`) so later writes that refresh a note via in-place property assignment don't fail on shells that can't add properties to an existing JSON object (e.g. PowerShell's `PSCustomObject`).
 - `activity` opens with `{role: "implementer", msg: "phase started"}` carrying a real timestamp.
 
 Refresh the file-level `updated_at` on every write throughout the run; the renderer surfaces it as the "updated" relative-time. Set `active_phase` to the lowest target phase number. Then bake.

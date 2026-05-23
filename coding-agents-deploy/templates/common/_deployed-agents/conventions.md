@@ -74,7 +74,7 @@ Schema:
       "cycle_cap": 10,
       "started_at": "<ISO-8601 UTC, with seconds>",
       "items": {
-        "w1": { "state": "pending | in-progress | done | blocked", "note": "optional" }
+        "w1": { "state": "pending | in-progress | done | blocked", "note": null }
       },
       "activity": [
         { "at": "<ISO-8601 UTC, with seconds>", "role": "implementer | inner-review | reviewer", "msg": "…" }
@@ -100,7 +100,7 @@ Coder-role agents do not edit the plan, but `proposed_decisions` is their channe
 
 | Event | Update | Bake |
 |---|---|---|
-| Phase started | Initialise `phases[N]` block (`started_at` with seconds, `sub_state: "coding"`, `cycle: 1`, `cycle_cap: 10`, items keyed off the plan's `[w*]`/`[a*]`/`[f*]` IDs, all `state: "pending"`); append activity `{role: "implementer", msg: "phase started"}`. | yes |
+| Phase started | Initialise `phases[N]` block (`started_at` with seconds, `sub_state: "coding"`, `cycle: 1`, `cycle_cap: 10`, items keyed off the plan's `[w*]`/`[a*]`/`[f*]` IDs, each seeded as `{ "state": "pending", "note": null }` — seed `note` explicitly so later in-place property writes don't fail on shells that can't add properties to existing JSON objects, e.g. PowerShell's `PSCustomObject`); append activity `{role: "implementer", msg: "phase started"}`. | yes |
 | Begin a Work item / start writing a file | Flip the relevant item from `"pending"` → `"in-progress"`; optional one-line `note`. | yes |
 | Finish a Work item / file is written and would survive the build | Flip the item to `"done"`. | yes |
 | About to spawn `review-iterate` | Set `sub_state: "inner-review"`; on cycles ≥ 2 increment `cycle`; append activity `{role: "implementer", msg: "inner-review pass requested (cycle K)"}`. **Write before the Agent tool call, not after.** | yes |
@@ -119,7 +119,7 @@ Coder-role agents do not edit the plan, but `proposed_decisions` is their channe
 
 | Event | Update | Bake |
 |---|---|---|
-| Outer review started for phase N | Ensure `phases[N]` exists. If absent (e.g. the phase was previously completed and the block cleared, or the reviewer was invoked on a phase that never ran through `/implement-phase`), create it with a real ISO-8601 `started_at`, `cycle: 1`, `cycle_cap: 10`, and items seeded from the plan's `[w*]`/`[a*]`/`[f*]` IDs (`state: "pending"` unless the plan's `✅`/`⚠️` markers indicate otherwise – mirror them). Set `sub_state: "outer-review"`. Append `{role: "reviewer", msg: "outer review started"}`. Refresh `updated_at`. | yes |
+| Outer review started for phase N | Ensure `phases[N]` exists. If absent (e.g. the phase was previously completed and the block cleared, or the reviewer was invoked on a phase that never ran through `/implement-phase`), create it with a real ISO-8601 `started_at`, `cycle: 1`, `cycle_cap: 10`, and items seeded from the plan's `[w*]`/`[a*]`/`[f*]` IDs as `{ "state": "pending", "note": null }` (mirror the plan's `✅`/`⚠️` markers into `state` where they indicate something other than pending — `note` still seeds as `null`). Set `sub_state: "outer-review"`. Append `{role: "reviewer", msg: "outer review started"}`. Refresh `updated_at`. | yes |
 | Finding raised during the review | Append `{role: "reviewer", msg: "finding[<SEV>] <file:line> <summary>"}`. Severity is the same vocabulary as the inner review (`BLOCKER` / `MAJOR` / `MINOR` / `NIT` / `DOC`). | yes |
 | Verification command ran | Append `{role: "reviewer", msg: "ran <build_cmd|test_cmd>: <pass|fail summary>"}` for each command the review executes. | yes |
 | Phase promoted to `completed` | Walk `proposed_decisions` first (fold accepted ones into `## Decisions`, drop the rest), then delete the entire `phases[N]` block. The plan's lifecycle marker is now authoritative. | yes |
