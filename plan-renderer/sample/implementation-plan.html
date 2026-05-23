@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-omnis-palette="black-silver">
 <head>
-  <!-- baked from implementation-plan.md + implementation-plan.progress.json at 2026-05-23T04:18:50Z -->
+  <!-- baked from implementation-plan.md + implementation-plan.progress.json at 2026-05-23T04:33:39Z -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Plan Renderer</title>
@@ -313,27 +313,22 @@ code { background: var(--surface); padding: 0 .25em; border-radius: 3px; }
 
 /* ─── App chrome ──────────────────────────────────────────────── */
 
-/* The bar pins to the top of the viewport so the legend is always
-   in view while the user scrolls through phases. Box-shadow gives a
-   subtle separation when content scrolls under it. */
+/* The bar pins to the top of the viewport so it stays in view while
+   the user scrolls through phases. Box-shadow gives a subtle
+   separation when content scrolls under it. */
 .app-bar {
   position: sticky;
   top: 0;
   z-index: 50;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 24px 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 24px;
   background: var(--sidebar);
   color: var(--on-sidebar);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
-}
-.app-bar-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
 }
 .app-bar .app-title {
   font-weight: 600;
@@ -342,65 +337,6 @@ code { background: var(--surface); padding: 0 .25em; border-radius: 3px; }
   color: var(--on-sidebar-active);
 }
 .app-bar .controls { display: flex; gap: 8px; }
-
-/* Legend – three rows (Phase / Item / Live), each a wrapping flex
-   of `swatch + label` pills. Stays inside .app-bar so it scrolls
-   with the title bar (i.e. it's always visible). */
-.legend {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 13px;
-  line-height: 1.4;
-}
-.legend-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 10px;
-}
-.legend-row-label {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  font-weight: 600;
-  color: var(--on-sidebar);
-  min-width: 42px;
-}
-.legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--on-sidebar);
-  white-space: nowrap;
-}
-.legend-swatch {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  display: inline-block;
-  flex-shrink: 0;
-  border: 1px solid rgba(255,255,255,0.08);
-}
-.legend-swatch.completed {
-  /* terminal lifecycle state gets a thicker ring so it visually reads
-     as "sealed" vs the lighter item-done dot */
-  box-shadow: 0 0 0 1.5px var(--st-completed-border) inset;
-}
-
-.legend-swatch.pending        { background: var(--st-pending); }
-.legend-swatch.current        { background: var(--st-current); }
-.legend-swatch.in-progress    { background: var(--st-in-progress); }
-.legend-swatch.done           { background: var(--st-done); }
-.legend-swatch.ready          { background: var(--st-ready); }
-.legend-swatch.completed      { background: var(--st-completed); }
-.legend-swatch.blocked        { background: var(--st-blocked); }
-.legend-swatch.under-review   { background: var(--st-under-review); }
-.legend-swatch.inner-review   { background: var(--st-inner-review); }
-.legend-swatch.needs-fixes    { background: var(--st-needs-fixes); }
-.legend-swatch.applying-fixes { background: var(--st-applying-fixes); }
-.legend-swatch.coding         { background: var(--st-coding); }
-.legend-swatch.idle           { background: var(--st-pending); }
 
 main {
   padding: 24px;
@@ -1031,39 +967,10 @@ main {
 </head>
 <body>
   <div class="app-bar">
-    <div class="app-bar-top">
-      <span class="app-title">plan-renderer</span>
-      <div class="controls">
-        <button id="refresh-toggle" class="btn btn-ghost" type="button">auto-refresh: off</button>
-        <button id="theme-toggle" class="btn btn-ghost" type="button">dark mode</button>
-      </div>
-    </div>
-    <div class="legend" aria-label="status legend">
-      <div class="legend-row">
-        <span class="legend-row-label">Phase</span>
-        <span class="legend-item"><span class="legend-swatch pending"></span>pending</span>
-        <span class="legend-item"><span class="legend-swatch current"></span>current</span>
-        <span class="legend-item"><span class="legend-swatch under-review"></span>under-review</span>
-        <span class="legend-item"><span class="legend-swatch needs-fixes"></span>needs-fixes</span>
-        <span class="legend-item"><span class="legend-swatch completed"></span>completed</span>
-        <span class="legend-item"><span class="legend-swatch blocked"></span>blocked</span>
-      </div>
-      <div class="legend-row">
-        <span class="legend-row-label">Item</span>
-        <span class="legend-item"><span class="legend-swatch pending"></span>pending</span>
-        <span class="legend-item"><span class="legend-swatch in-progress"></span>in-progress</span>
-        <span class="legend-item"><span class="legend-swatch done"></span>done</span>
-        <span class="legend-item"><span class="legend-swatch blocked"></span>blocked</span>
-      </div>
-      <div class="legend-row">
-        <span class="legend-row-label">Live</span>
-        <span class="legend-item"><span class="legend-swatch idle"></span>idle</span>
-        <span class="legend-item"><span class="legend-swatch coding"></span>coding</span>
-        <span class="legend-item"><span class="legend-swatch inner-review"></span>inner-review</span>
-        <span class="legend-item"><span class="legend-swatch applying-fixes"></span>applying-fixes</span>
-        <span class="legend-item"><span class="legend-swatch ready"></span>ready</span>
-        <span class="legend-item"><span class="legend-swatch blocked"></span>blocked</span>
-      </div>
+    <span class="app-title">plan-renderer</span>
+    <div class="controls">
+      <button id="refresh-toggle" class="btn btn-ghost" type="button">auto-refresh: off</button>
+      <button id="theme-toggle" class="btn btn-ghost" type="button">dark mode</button>
     </div>
   </div>
   <main id="plan-root"></main>
@@ -1338,7 +1245,7 @@ _(none — telemetry/log/blob architecture is intentionally stubbed and deferred
   }
 }
 </script>
-  <script id="plan-bake-meta" type="application/json">{"baked_at": "2026-05-23T04:18:50Z", "plan": "implementation-plan.md", "progress": "implementation-plan.progress.json"}</script>
+  <script id="plan-bake-meta" type="application/json">{"baked_at": "2026-05-23T04:33:39Z", "plan": "implementation-plan.md", "progress": "implementation-plan.progress.json"}</script>
   <script id="renderer-js">// plan-renderer: turn a Plan-Contract markdown + a progress.json overlay
 // into a structured, interactive HTML view.
 //

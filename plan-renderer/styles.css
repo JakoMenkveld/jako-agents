@@ -164,27 +164,22 @@ code { background: var(--surface); padding: 0 .25em; border-radius: 3px; }
 
 /* ─── App chrome ──────────────────────────────────────────────── */
 
-/* The bar pins to the top of the viewport so the legend is always
-   in view while the user scrolls through phases. Box-shadow gives a
-   subtle separation when content scrolls under it. */
+/* The bar pins to the top of the viewport so it stays in view while
+   the user scrolls through phases. Box-shadow gives a subtle
+   separation when content scrolls under it. */
 .app-bar {
   position: sticky;
   top: 0;
   z-index: 50;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 24px 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 24px;
   background: var(--sidebar);
   color: var(--on-sidebar);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
-}
-.app-bar-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
 }
 .app-bar .app-title {
   font-weight: 600;
@@ -193,65 +188,6 @@ code { background: var(--surface); padding: 0 .25em; border-radius: 3px; }
   color: var(--on-sidebar-active);
 }
 .app-bar .controls { display: flex; gap: 8px; }
-
-/* Legend – three rows (Phase / Item / Live), each a wrapping flex
-   of `swatch + label` pills. Stays inside .app-bar so it scrolls
-   with the title bar (i.e. it's always visible). */
-.legend {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 13px;
-  line-height: 1.4;
-}
-.legend-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 10px;
-}
-.legend-row-label {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  font-weight: 600;
-  color: var(--on-sidebar);
-  min-width: 42px;
-}
-.legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--on-sidebar);
-  white-space: nowrap;
-}
-.legend-swatch {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  display: inline-block;
-  flex-shrink: 0;
-  border: 1px solid rgba(255,255,255,0.08);
-}
-.legend-swatch.completed {
-  /* terminal lifecycle state gets a thicker ring so it visually reads
-     as "sealed" vs the lighter item-done dot */
-  box-shadow: 0 0 0 1.5px var(--st-completed-border) inset;
-}
-
-.legend-swatch.pending        { background: var(--st-pending); }
-.legend-swatch.current        { background: var(--st-current); }
-.legend-swatch.in-progress    { background: var(--st-in-progress); }
-.legend-swatch.done           { background: var(--st-done); }
-.legend-swatch.ready          { background: var(--st-ready); }
-.legend-swatch.completed      { background: var(--st-completed); }
-.legend-swatch.blocked        { background: var(--st-blocked); }
-.legend-swatch.under-review   { background: var(--st-under-review); }
-.legend-swatch.inner-review   { background: var(--st-inner-review); }
-.legend-swatch.needs-fixes    { background: var(--st-needs-fixes); }
-.legend-swatch.applying-fixes { background: var(--st-applying-fixes); }
-.legend-swatch.coding         { background: var(--st-coding); }
-.legend-swatch.idle           { background: var(--st-pending); }
 
 main {
   padding: 24px;

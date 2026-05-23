@@ -77,6 +77,8 @@ Reach this step only once every finding is applied (step 3 gate). Iterate build 
 - **Naming sweep.** Grep every file the fixes touched for single-letter callback params and accumulator pairs: `\.(find|filter|map|some|every)\(\([a-z]\)`, `\.(reduce|sort)\(\([a-z],\s*[a-z]\)`, plus the project's banned short-name list (`arr`, `obj`, `val`, `tmp`, `idx`, `cnt`, `cfg`, `opts`, `ctx`, `len`, `cur`, `buf`, `ret`, `dst`, `src`, `fn`, `cb`, `prev`).
 - **Dead export sweep.** Grep the repo for every `module.exports` (or equivalent) key in new/changed modules. Drop or document any export with no consumer.
 - **Bare config-literal sweep.** In every file the plan calls config-driven, grep for bare numeric literals (≥2 digits, excluding 0/1) and confirm each one comes from a constants module / a request-time argument / has a comment explaining why it cannot live in config.
+- **Validator-rejection-test sweep.** If the fix touches a `validateX` / `assertValidX` pair (or any documented-failure-mode function), enumerate the rejection branches and confirm a test exercises each. Cover: non-plain-object input, wrong `type` discriminator, missing required field, unknown enum value, container field set to a non-object/non-array, and one rejection driven by a constructed-then-mutated object.
+- **Cache-behavioural-branch sweep.** If the fix touches a cache with hit / miss / refresh / mtime-only-touch / external-input-invalidation branches, enumerate every distinct branch and confirm a test drives each.
 
 ### 5. Spawn the reviewer
 
