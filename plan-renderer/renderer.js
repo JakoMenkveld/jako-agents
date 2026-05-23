@@ -198,17 +198,49 @@ function parseBullets(body) {
 }
 
 function parseTaggedBullets(body) {
-  // `- [w1] text` or `- text` (auto-assign id by index if missing)
+  // `- [w1] text` or `- text` (auto-assign id by index if missing).
+  // Also extracts the review-implementation status surface from the bullet
+  // text: trailing `✅` → marker "done"; trailing `⚠️`/`⚠` (optionally
+  // followed by a `[partial: …]` note) → marker "partial". The marker lets
+  // the renderer infer item state when the progress overlay is cleared
+  // (review-implementation deletes a phase's progress block once the plan's
+  // markdown is the authoritative record).
   const out = [];
   let autoIdx = 1;
   for (const raw of parseBullets(body)) {
-    const m = raw.match(/^\[([wfa]\d+|[a-z]+\d+)\]\s+(.+)$/i);
+    let text = raw;
+    let marker = null;
+
+    // GFM-style checkbox at the start: `[x] …` or `[ ] …`. (parseBullets has
+    // already stripped the leading `- `.)
+    const cb = text.match(/^\[([ xX])\]\s+(.*)$/);
+    if (cb) {
+      marker = cb[1].toLowerCase() === "x" ? "done" : "pending";
+      text = cb[2];
+    }
+
+    // Trailing status icon. The "done" icon wins outright; the "partial"
+    // icon only sets the marker when no stronger signal is already set.
+    // A bracketed reason after the icon is preserved as part of the text.
+    let im = text.match(/^(.*?)\s*(✅)\s*(\[[^\]]*\])?\s*$/);
+    if (im) {
+      marker = "done";
+      text = im[3] ? (im[1].trimEnd() + " " + im[3]) : im[1].trimEnd();
+    } else {
+      im = text.match(/^(.*?)\s*(⚠️|⚠)\s*(\[[^\]]*\])?\s*$/);
+      if (im) {
+        if (marker !== "done") marker = "partial";
+        text = im[3] ? (im[1].trimEnd() + " " + im[3]) : im[1].trimEnd();
+      }
+    }
+
+    const m = text.match(/^\[([wfa]\d+|[a-z]+\d+)\]\s+(.+)$/i);
     if (m) {
-      out.push({ id: m[1].toLowerCase(), text: m[2] });
+      out.push({ id: m[1].toLowerCase(), text: m[2], marker });
     } else {
       // auto-id; prefix derived from caller context isn't known here,
       // so we use plain numbering and the caller can prefix as needed.
-      out.push({ id: String(autoIdx), text: raw });
+      out.push({ id: String(autoIdx), text, marker });
     }
     autoIdx++;
   }
@@ -538,9 +570,9 @@ function renderItemList(label, items, progress, phaseNum, kind, phaseLifecycle) 
     // workflow state so the pill reflects "where this item sits right now"
     // and not just "is the file on disk".
     const itemId = normalizeItemId(item.id, kind);
-    const rawState = progress?.items?.[itemId]?.state || "pending";
+    const progState = progress?.items?.[itemId]?.state;   // may be undefined
     const note = progress?.items?.[itemId]?.note;
-    const eff = effectiveItemState(rawState, progress, phaseLifecycle);
+    const eff = effectiveItemState(progState, item.marker, progress, phaseLifecycle);
     ul.appendChild(el("li", { className: `item item-${eff.state}` }, [
       el("span", { className: "item-id" }, itemId),
       el("span", { className: "item-text", html: renderInline(item.text) }),
@@ -552,33 +584,49 @@ function renderItemList(label, items, progress, phaseNum, kind, phaseLifecycle) 
   return wrap;
 }
 
-// Map a raw item state (pending | in-progress | done | blocked) plus the
+// Map an item's progress-overlay state (pending | in-progress | done |
+// blocked, possibly undefined) plus the markdown status marker plus the
 // phase's lifecycle and sub-state into a single label the user can act on.
+//
 // Rationale: implementers flip items to "done" as soon as the file is on
 // disk, long before the inner reviewer signs off. A bare "done" pill mid
-// inner-review lies about progress – this folds the surrounding context
-// into the pill so the user sees the real story.
-function effectiveItemState(rawState, progress, phaseLifecycle) {
-  if (rawState === "blocked")     return { state: "blocked",     label: "blocked" };
-  if (rawState === "pending")     return { state: "pending",     label: "pending" };
-  if (rawState === "in-progress") return { state: "in-progress", label: "in progress" };
+// inner-review lies about progress – we fold the surrounding context into
+// the pill so the user sees the real story. After review-implementation
+// promotes a phase to "completed" it clears that phase's progress block,
+// so we also fall back to the markdown status surface (✅ markers on
+// bullets, plus the phase lifecycle) to keep completed bullets reading as
+// completed rather than reverting to "pending".
+function effectiveItemState(progState, marker, progress, phaseLifecycle) {
+  // 1) Explicit progress-overlay state wins – this is the live signal an
+  // active phase writes per item, and the user has asked us to respect
+  // "blocked" / "in-progress" even on a completed phase.
+  if (progState === "blocked")     return { state: "blocked",     label: "blocked" };
+  if (progState === "in-progress") return { state: "in-progress", label: "in progress" };
+  if (progState === "done") {
+    if (phaseLifecycle === "completed")    return { state: "completed",    label: "completed" };
+    if (phaseLifecycle === "needs-fixes")  return { state: "needs-fixes",  label: "needs fixes" };
+    if (phaseLifecycle === "under-review") return { state: "under-review", label: "under review" };
+    if (phaseLifecycle === "blocked")      return { state: "blocked",      label: "blocked" };
+    const sub = progress?.sub_state;
+    if (sub === "ready")          return { state: "ready",          label: "ready for review" };
+    if (sub === "applying-fixes") return { state: "applying-fixes", label: "applying fixes" };
+    if (sub === "inner-review")   return { state: "inner-review",   label: "in inner review" };
+    return { state: "done", label: "written" };
+  }
+  if (progState === "pending") return { state: "pending", label: "pending" };
 
-  // rawState === "done" – fold in phase context.
-  if (phaseLifecycle === "completed")    return { state: "completed",    label: "completed" };
-  if (phaseLifecycle === "needs-fixes")  return { state: "needs-fixes",  label: "needs fixes" };
-  if (phaseLifecycle === "under-review") return { state: "under-review", label: "under review" };
-  if (phaseLifecycle === "blocked")      return { state: "blocked",      label: "blocked" };
+  // 2) No per-item progress state. Fall back to the markdown markers the
+  // reviewer left on the bullet.
+  if (marker === "done")    return { state: "completed",   label: "completed" };
+  if (marker === "partial") return { state: "in-progress", label: "in progress" };
 
-  // Phase is current (or unstarted). Defer to the live sub-state.
-  const sub = progress?.sub_state;
-  if (sub === "ready")          return { state: "ready",          label: "ready for review" };
-  if (sub === "applying-fixes") return { state: "applying-fixes", label: "applying fixes" };
-  if (sub === "inner-review")   return { state: "inner-review",   label: "in inner review" };
+  // 3) No bullet-level signal either. The phase lifecycle is then the
+  // strongest hint we have – a completed phase implies its items shipped,
+  // even if review-implementation cleared the overlay and the reviewer
+  // didn't bother repainting every bullet with ✅.
+  if (phaseLifecycle === "completed") return { state: "completed", label: "completed" };
 
-  // sub_state coding/idle/missing – file is on disk but the inner loop
-  // hasn't seen it yet. Don't claim "done" – that word is reserved for
-  // sign-off. Show what's true: written.
-  return { state: "done", label: "written" };
+  return { state: "pending", label: "pending" };
 }
 
 function normalizeItemId(rawId, kind) {
