@@ -57,7 +57,7 @@ The deployed plan renderer ([`.deployed-agents/plan-renderer/`](.deployed-agents
 
 ### Live progress overlay
 
-`{{plan_progress_path}}` (sibling of the plan, e.g. `docs/implementation-plan.progress.json`) is an **implementer-owned** overlay that carries live state during a phase: which Work/Files items are in progress, which inner-review cycle the implementer is on, an activity log, and any decisions the implementer wants to propose to the reviewer. The renderer merges this into the HTML view in near-real-time.
+`{{plan_progress_path}}` (sibling of the plan, e.g. `docs/implementation-plan.progress.json`) is the live overlay that carries phase state during a review or implementation cycle: which Work/Files items are in progress, which inner-review cycle the implementer is on, an activity log, and any decisions the implementer wants to propose to the reviewer. Implementer commands own it most of the time; the outer reviewer writes to it for the duration of a review, then clears any phase it promotes to `completed`. The renderer merges this into the HTML view in near-real-time.
 
 Schema:
 
@@ -69,7 +69,7 @@ Schema:
   "active_phase": 1,
   "phases": {
     "<phase-number>": {
-      "sub_state": "idle | coding | inner-review | applying-fixes | ready | blocked",
+      "sub_state": "idle | coding | inner-review | applying-fixes | ready | outer-review | blocked",
       "cycle": 2,
       "cycle_cap": 10,
       "started_at": "<ISO-8601 UTC, with seconds>",
@@ -91,7 +91,7 @@ Ownership:
 
 - **Implementer commands** (`implement-phase`, `implement-fixes`) read and write `progress.json` continuously (see "Implementer write checkpoints" below).
 - The **inner reviewer** (`review-iterate`) stays read-only. The calling implementer command relays its findings into `activity` (with role `inner-review`) as part of the same write.
-- **Reviewer commands** (`review-implementation`) clear the `phases[N]` block when promoting phase N to `completed` (the plan's lifecycle marker is the authoritative record from that point). They may also fold accepted `proposed_decisions` into `## Decisions` in the plan and then clear them.
+- **Reviewer commands** (`review-implementation`) write the block while a review is in flight – `sub_state: "outer-review"`, with each finding appended as an `activity` entry of role `reviewer` so the user can see what the review is uncovering as it happens. On a phase the review promotes to `completed`, they clear the entire `phases[N]` block – the plan's lifecycle marker is the authoritative record from that point. On a phase that ends `needs-fixes` / `under-review`, they leave the block in place (with the findings recorded in `activity`) and hand `sub_state` to `applying-fixes` so the next implementer pass picks up cleanly. See "Reviewer write checkpoints" below.
 - **`archive-plan`** moves `progress.json` alongside the plan when archiving and starts the fresh plan with no overlay.
 
 Coder-role agents do not edit the plan, but `proposed_decisions` is their channel for surfacing decisions to the reviewer.
@@ -114,6 +114,16 @@ Coder-role agents do not edit the plan, but `proposed_decisions` is their channe
 | Phase committed | Append `{role: "implementer", msg: "committed <short-sha>"}`; keep `sub_state: "ready"` (the outer reviewer takes over from here). | yes |
 
 `activity` entries are appended; the renderer sorts them newest-first for display, so write order does not matter. Trim each phase's list to ~50 entries by dropping the oldest (lowest `at`). Every timestamp (`updated_at`, `started_at`, each `at`) is full ISO-8601 with seconds (e.g. `2026-05-23T10:14:07Z`) and reflects a real wall-clock instant – never a midnight placeholder. `updated_at` is the file-level timestamp; refresh it on every write.
+
+**Reviewer write checkpoints.** `review-implementation` writes the overlay too, so the user watching `{{plan_html_path}}` sees the review in motion instead of a long silent gap. Same step-gate discipline as the implementer table – each row is a mandatory write paired with a bake:
+
+| Event | Update | Bake |
+|---|---|---|
+| Outer review started for phase N | Ensure `phases[N]` exists. If absent (e.g. the phase was previously completed and the block cleared, or the reviewer was invoked on a phase that never ran through `/implement-phase`), create it with a real ISO-8601 `started_at`, `cycle: 1`, `cycle_cap: 10`, and items seeded from the plan's `[w*]`/`[a*]`/`[f*]` IDs (`state: "pending"` unless the plan's `✅`/`⚠️` markers indicate otherwise – mirror them). Set `sub_state: "outer-review"`. Append `{role: "reviewer", msg: "outer review started"}`. Refresh `updated_at`. | yes |
+| Finding raised during the review | Append `{role: "reviewer", msg: "finding[<SEV>] <file:line> <summary>"}`. Severity is the same vocabulary as the inner review (`BLOCKER` / `MAJOR` / `MINOR` / `NIT` / `DOC`). | yes |
+| Verification command ran | Append `{role: "reviewer", msg: "ran <build_cmd|test_cmd>: <pass|fail summary>"}` for each command the review executes. | yes |
+| Phase promoted to `completed` | Walk `proposed_decisions` first (fold accepted ones into `## Decisions`, drop the rest), then delete the entire `phases[N]` block. The plan's lifecycle marker is now authoritative. | yes |
+| Phase ended `needs-fixes` / partial | Keep the block – the activity log is the record of what the review found. Set `sub_state: "applying-fixes"` (the implementer's next `/implement-fixes` run will append to the existing block). Append a final `{role: "reviewer", msg: "outer review complete – K findings pending"}`. | yes |
 
 Reviewer commands run the same bake command after every plan or progress write. The skipped bake leaves the rendered HTML stale, so anyone watching `{{plan_html_path}}` in a browser sees outdated state.
 

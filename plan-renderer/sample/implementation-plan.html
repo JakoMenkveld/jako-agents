@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-omnis-palette="black-silver">
 <head>
-  <!-- baked from implementation-plan.md + implementation-plan.progress.json at 2026-05-23T06:41:53Z -->
+  <!-- baked from implementation-plan.md + implementation-plan.progress.json at 2026-05-23T07:03:32Z -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Plan Renderer</title>
@@ -710,6 +710,7 @@ main {
 .live-panel.live-sub-inner-review   { border-color: var(--st-inner-review-border);   border-left-color: var(--st-inner-review); }
 .live-panel.live-sub-applying-fixes { border-color: var(--st-applying-fixes-border); border-left-color: var(--st-applying-fixes); }
 .live-panel.live-sub-ready          { border-color: var(--st-ready-border);          border-left-color: var(--st-ready); }
+.live-panel.live-sub-outer-review   { border-color: var(--st-under-review-border);   border-left-color: var(--st-under-review); }
 .live-panel.live-sub-blocked        { border-color: var(--st-blocked-border);        border-left-color: var(--st-blocked); }
 
 .live-head {
@@ -729,6 +730,7 @@ main {
 .live-panel.live-sub-inner-review   .live-label { color: var(--st-inner-review); }
 .live-panel.live-sub-applying-fixes .live-label { color: var(--st-applying-fixes); }
 .live-panel.live-sub-ready          .live-label { color: var(--st-ready); }
+.live-panel.live-sub-outer-review   .live-label { color: var(--st-under-review); }
 .live-panel.live-sub-blocked        .live-label { color: var(--st-blocked); }
 
 .live-sub {
@@ -754,6 +756,7 @@ main {
 .live-substate.sub-inner-review   { color: var(--st-inner-review); }
 .live-substate.sub-applying-fixes { color: var(--st-applying-fixes); }
 .live-substate.sub-ready          { color: var(--st-ready); }
+.live-substate.sub-outer-review   { color: var(--st-under-review); }
 .live-substate.sub-blocked        { color: var(--st-blocked); }
 
 /* Cycle counter – distinct visual emphasis so the user sees it tick. */
@@ -1245,7 +1248,7 @@ _(none — telemetry/log/blob architecture is intentionally stubbed and deferred
   }
 }
 </script>
-  <script id="plan-bake-meta" type="application/json">{"baked_at": "2026-05-23T06:41:53Z", "plan": "implementation-plan.md", "progress": "implementation-plan.progress.json"}</script>
+  <script id="plan-bake-meta" type="application/json">{"baked_at": "2026-05-23T07:03:32Z", "plan": "implementation-plan.md", "progress": "implementation-plan.progress.json"}</script>
   <script id="renderer-js">// plan-renderer: turn a Plan-Contract markdown + a progress.json overlay
 // into a structured, interactive HTML view.
 //
@@ -1262,6 +1265,7 @@ const SUB_STATE_LABEL = {
   "inner-review": "inner review",
   "applying-fixes": "applying fixes",
   "ready": "ready for outer review",
+  "outer-review": "outer review",
   "blocked": "blocked",
 };
 

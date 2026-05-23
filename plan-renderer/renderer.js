@@ -14,6 +14,7 @@ const SUB_STATE_LABEL = {
   "inner-review": "inner review",
   "applying-fixes": "applying fixes",
   "ready": "ready for outer review",
+  "outer-review": "outer review",
   "blocked": "blocked",
 };
 
