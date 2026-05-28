@@ -6,7 +6,7 @@ A Cowork / Claude Code skill that deploys a "best of breed" set of coding-agent 
 - **`codex-codes`** — Codex implements the plan, Claude does the outer review.
 - **`both`** — deploy both lanes side-by-side.
 
-Every role also deploys a **`review-and-fix`** skill to both Claude and Codex — it creates new implementation plans or audit-and-auto-fixes existing ones so they comply with the structure the implementer and reviewer agents expect.
+Every role also deploys a **`review-and-fix`** skill to both Claude and Codex — it creates new implementation plans, or audits existing ones: auto-fixing structural gaps **and** reviewing the plan's content (flagging unfilled placeholders, vague or non-verifiable items, and internal inconsistencies as advisory findings) so they comply with what the implementer and reviewer agents expect.
 
 ## How it works
 
@@ -82,7 +82,7 @@ The templates baked these patterns in:
 | `review-iterate` | coder's inner reviewer | coder's lane only | Read-only critical reviewer used inside the implementer's loop. |
 | `review-implementation` | outer reviewer | reviewer's lane only | Human-driven outer review of a phase; truthfully updates the whole status surface (headings, bullets, checkboxes, Phase Status table, per-phase Status lines, Mermaid graph node labels + class lines) in the plan's own legend, then commits locally. |
 | `archive-plan` | outer reviewer | reviewer's lane only | Archive a fully-completed plan into a dated `archive/` file and start a fresh, task-free plan carrying forward only durable context. Refuses to run with outstanding tasks and asks the user how to proceed. |
-| **`review-and-fix`** | **plan management** | **both lanes** | **Create a new plan or audit-and-auto-fix the structure of an existing one to match what implementers and reviewers expect.** |
+| **`review-and-fix`** | **plan management** | **both lanes** | **Create a new plan, or audit an existing one — auto-fixing structural gaps and reviewing its content (placeholders, vague/non-verifiable items, inconsistencies) — to match what implementers and reviewers expect.** |
 
 ## Local development
 

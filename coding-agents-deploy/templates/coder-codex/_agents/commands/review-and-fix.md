@@ -1,11 +1,13 @@
 ---
 name: review-and-fix
-description: Create a new {{project_name}} implementation plan or audit-and-auto-fix the structure of an existing one at {{plan_path}}. Ensures the plan matches the canonical layout expected by implement-phase and review-implementation.
+description: Create a new {{project_name}} implementation plan, or audit and repair an existing one at {{plan_path}}. Auto-fixes structural gaps against the canonical layout expected by implement-phase and review-implementation, and reviews section content – flagging unfilled placeholders, vague or non-verifiable items, and internal inconsistencies as advisory findings without rewriting your prose.
 ---
 
 # /review-and-fix
 
 Create or repair the implementation plan at `{{plan_path}}` so it complies with what the implementer (`/implement-phase`) and reviewer (`/review-implementation`) agents expect.
+
+The audit covers **both the structure and the content** of the plan. It auto-fixes missing structural sections, and it reviews the substance of the sections that already exist – surfacing unfilled placeholders, vague or non-verifiable items, and internal inconsistencies as advisory findings. Content review is report-only: the command flags content gaps but never rewrites your prose.
 
 This command operates in two modes – it picks the mode automatically:
 
@@ -115,7 +117,9 @@ Open `{{plan_path}}` and parse the top-level sections (`#`, `##`, `###` headings
 
 ### 2. Audit
 
-Check for each of the following. A finding is **STRUCTURAL** when the implementer/reviewer can't function correctly without it, and **STYLE** when it's only a formatting/consistency issue.
+Check for each of the following. A finding is **STRUCTURAL** when a section is missing or malformed so the implementer/reviewer can't function, **CONTENT** when a section is present but its substance is missing, still a placeholder, vague, or internally inconsistent, and **STYLE** when it's only a formatting/consistency issue.
+
+#### Structural & style checks
 
 | Check | Severity | Notes |
 |-------|----------|-------|
@@ -136,6 +140,24 @@ Check for each of the following. A finding is **STRUCTURAL** when the implemente
 | Phase numbering is contiguous (0, 1, 2, … no gaps) | STYLE | Gaps confuse readers but don't break the agents. |
 | Sections appear in the canonical order shown above | STYLE | Out-of-order sections work but read awkwardly. |
 | Every `### Work` / `### Acceptance Criteria` / `### Phase N` Files bullet carries a stable `[w*]`/`[a*]`/`[f*]` ID | STYLE | Without IDs, the renderer falls back to bullet index and loses track when bullets reorder. Auto-fix adds them. |
+
+#### Content checks (report-only – never auto-rewritten)
+
+These inspect the *substance* of sections that already exist, not merely whether they exist. Every content finding is advisory: surface it in the report, but never rewrite the user's prose to "fix" it.
+
+| Check | Notes |
+|-------|-------|
+| The title summary paragraph is real prose, not missing or a one-line stub | The implementer reads it to understand what's being built and why. |
+| `## Automation Contract` has real build/test/CI/environment content, not the placeholder bullet | The implementer can't start without concrete assumptions. |
+| `## Definition of Done` lists real exit criteria, not the placeholder bullet | The reviewer gates the whole plan on this. |
+| No `### Work`, `### Acceptance Criteria`, Files, or Test Plan bullet is still an unfilled placeholder – the parenthetical text the skeleton/create-mode inserts, e.g. `(List work items for this phase.)` | A leftover placeholder means that part of the phase isn't actually planned yet. |
+| Every `### Work` bullet is a concrete, actionable task, not a vague aspiration | Vague work can't be implemented or verified. |
+| Every `### Acceptance Criteria` bullet is objectively verifiable against the code | The reviewer must be able to check each one. |
+| `## Phase Flow` nodes correspond one-to-one with the actual `## Phase N` headings | A drifted flow graph misleads the reviewer and the renderer. |
+| `## Recommended Execution Order` lists every phase | A phase missing from the order won't get scheduled. |
+| Each phase's `### Phase N` sub-block under `## Files to Create or Modify by Phase` and `## Test Plan` has substantive entries that relate to that phase's Work and Acceptance Criteria | Placeholder-only sub-blocks leave the reviewer nothing to verify. |
+
+Never raise a content finding against an empty `## Decisions` or `## Open Questions` (or a "none" note) – both are fully compliant when empty.
 
 ### 3. Auto-fix structural issues
 
@@ -193,7 +215,7 @@ If the plan was already STRUCTURAL-clean, also apply STYLE fixes:
 
 ### 6. Report
 
-Report **only what was wrong and what you changed**. Never narrate the plan's structure, never list sections that were already present, and never affirm that the plan matches the canonical structure when nothing was wrong. Omit any subsection whose list would be empty – do not print `(none)` placeholders or empty headings.
+Report **only what was wrong, what you changed, and what content gaps you noticed**. Never narrate the plan's structure, never list sections that were already present, and never affirm that the plan matches the canonical structure when nothing was wrong. Omit any subsection whose list would be empty – do not print `(none)` placeholders or empty headings.
 
 - **Structural fixes were applied** – list them, then the trailing placeholder note:
 
@@ -207,9 +229,11 @@ Report **only what was wrong and what you changed**. Never narrate the plan's st
   The plan now matches the canonical structure expected by /implement-phase and /review-implementation. Placeholder bullets are marked with parentheses – fill them in before running the implementer.
   ```
 
+- **Content findings** – whenever the content audit surfaced anything, list it under a `Content review:` heading, one finding per line, each naming the section or phase and the gap (e.g. `Phase 2 ### Work [w1] is still the placeholder bullet`, `## Automation Contract has no real build/test content`, `Phase 3 acceptance criterion [a2] is not objectively verifiable`). These are advisory: the user fills in the prose, the command never rewrites it. Surface content findings even when structural or style fixes were also applied, and even when the structure is otherwise clean.
+
 - **Only style fixes or un-auto-fixed style findings** (no structural problems) – report just those, under their own heading. A duplicate-numbered phase or similar finding is a real problem: surface it.
 
-- **Plan already fully compliant** (no structural problems, no style fixes, no style findings) – output exactly this one line and nothing else. No structure narration, no section inventory, no canonical-structure affirmation, no placeholder note:
+- **Plan already fully compliant** (no structural problems, no content findings, no style fixes, no style findings) – output exactly this one line and nothing else. No structure narration, no section inventory, no canonical-structure affirmation, no placeholder note:
 
   ```
   Plan audited: {{plan_path}}: already compliant, no changes.
@@ -260,6 +284,7 @@ Before running /implement-phase you should fill in:
 ## Things you do NOT do
 
 - Do not change the content of any non-placeholder bullet.
+- Do not rewrite, reword, or fill in plan content to "resolve" a content finding – content review is report-only. Surface the gap and let the user address it.
 - Do not touch status markers or checklist boxes.
 - Do not rewrite, reorder, or remove `## Open Questions` (append-only, user-owned) or the `## Decisions` content (free-form, maintained by the user and `/review-implementation`); do not flag either section as a defect when it is empty or just says there are none.
 - Do not rename phases. (Renumbering or retitling phases is the user's call.)

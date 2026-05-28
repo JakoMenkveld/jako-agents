@@ -92,7 +92,7 @@ The setup has two lanes: Claude and Codex. The coding lane gets the rich impleme
 | `review-iterate` | Coder inner reviewer | Read-only critical reviewer used inside implementation loops. Claude uses Sonnet; Codex uses `gpt-5.5` with medium reasoning effort. |
 | `review-implementation` | Outer reviewer | Review one or more implementation phases, update the full plan status surface (headings, Work/Acceptance bullets, checkboxes, Phase Status table, per-phase Status lines, Phase Flow Mermaid node labels + class lines) in the plan's own legend within its narrow write policy, and commit the review locally. |
 | `archive-plan` | Outer reviewer | Archive a fully-completed plan into a dated `archive/` file and start a fresh, task-free plan that carries forward only durable context. Refuses to run while any task is outstanding and asks the user how to proceed. |
-| `review-and-fix` | Both lanes | Create a canonical implementation plan or repair structural gaps in an existing one. |
+| `review-and-fix` | Both lanes | Create a canonical implementation plan, or audit an existing one: repair structural gaps and review section content (placeholders, vague/non-verifiable items, internal inconsistencies) as advisory findings. |
 | `plan-renderer` (no command) | Every role | Self-contained HTML renderer for the plan + a live `progress.json` overlay. Implementer and reviewer agents bake after every plan/overlay write so the rendered file is always current. |
 
 `.deployed-agents/conventions.md` is the shared instruction source for the deployed agents, referenced by every command and skill in both lanes. No root-level `AGENTS.md` / `CLAUDE.md` is deployed; the project's own copies (if any) are left untouched.

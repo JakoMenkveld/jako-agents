@@ -11,7 +11,7 @@ You are deploying a coordinated Claude+Codex coding-agent setup into a target pr
 - **`codex-codes`** — Codex implements via the rich `.agents/commands/` + skill manifests with an inner `review-iterate` agent running on `gpt-5.5`; Claude hosts a single `.claude/commands/review-implementation.md` for the outer review.
 - **`both`** — deploys both lanes so the project can switch coders ad-hoc.
 
-**Every role also deploys `review-and-fix`** to BOTH lanes (Claude and Codex both get it, regardless of role). It creates new implementation plans or audits-and-auto-fixes existing ones so they comply with the structure the implementer and reviewer expect.
+**Every role also deploys `review-and-fix`** to BOTH lanes (Claude and Codex both get it, regardless of role). It creates new implementation plans, or audits existing ones — auto-fixing structural gaps and reviewing the plan's content (unfilled placeholders, vague or non-verifiable items, internal inconsistencies) as advisory findings — so they comply with what the implementer and reviewer expect.
 
 **The reviewer lane also gets `archive-plan`** (reviewer only, never the coder). It archives a fully-completed plan into a dated `archive/` file and starts a fresh, task-free plan that carries forward only durable context; it refuses to run while any task is outstanding and asks the user how to proceed.
 
