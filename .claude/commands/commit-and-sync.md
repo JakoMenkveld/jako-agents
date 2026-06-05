@@ -21,10 +21,10 @@ Commit the current working-tree changes in the **jako-agents** repo and push the
 
 ## Style to match
 
-Single-line, sentence-cased subject that captures the *why*. Mirror recent subjects: `git log -5 --format="%s"`. A short body is fine when the change spans themes; prefer none. Every commit ends with the trailer:
+Single-line, sentence-cased subject that captures the *why*. Mirror recent subjects: `git log -5 --format="%s"`. A short body is fine when the change spans themes; prefer none. Every commit ends with a co-author trailer naming **the model you are actually running as right now** (read it from your own identity – e.g. `Opus 4.8 (1M context)`; do not copy a version from this file or from past commits, which may be stale):
 
 ```
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+Co-Authored-By: Claude <your current model, e.g. Opus 4.8 (1M context)> <noreply@anthropic.com>
 ```
 
 Never use em dashes (`—`) in the message or anywhere – use an en dash (`–`) instead.
@@ -78,7 +78,7 @@ Commit with a HEREDOC so the trailer is preserved:
 git commit -m "$(cat <<'EOF'
 <subject line>
 
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+Co-Authored-By: Claude <your current model, e.g. Opus 4.8 (1M context)> <noreply@anthropic.com>
 EOF
 )"
 ```
