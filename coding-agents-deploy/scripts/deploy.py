@@ -7,6 +7,7 @@ Usage:
                      [--dry-run] [--no-backup] [--merge-existing]
                      [--template-updates ask|never|always]
                      [--interactive auto|always|never] [--skip-plan]
+                     [--gitignore-agents] [--no-gitignore]
 
 What it does:
   1. Runs detect_stack on the target.
@@ -47,12 +48,13 @@ PHASE_RE = re.compile(
 # managed content lives under these scaffolding dirs.
 MANAGED_TOP_LEVEL_FILES: set[Path] = set()
 MANAGED_SCAFFOLD_DIRS = (".claude", ".agents", ".deployed-agents")
-# Deployed workflows that are intentionally part of every dev's repo: they are
-# version-controlled, not added to the managed .gitignore block. `commit-and-sync`
-# is deployed to the Claude side for every role (from templates/common/) and to
-# the Codex side in the coder lane; all of its files (commands + skill shim, both
-# sides) stay tracked.
-TRACKED_WORKFLOW_NAMES = {"commit-and-sync"}
+# Deployed workflows that are intentionally part of every dev's repo: they stay
+# version-controlled and are never added to the managed .gitignore block (this only
+# matters under the opt-in --gitignore-agents mode; by default ALL agent files are
+# tracked). `commit-and-sync` and `publish-to-source` are deployed to the Claude side
+# for every role (from templates/common/) and to the Codex side in the coder lane;
+# all of their files (commands + skill shim, both sides) stay tracked.
+TRACKED_WORKFLOW_NAMES = {"commit-and-sync", "publish-to-source"}
 # Files where the deploy template is the single source of truth. They are
 # generated/packaged artifacts (e.g. the self-contained plan-renderer/bake.py),
 # so the deploy overwrites them on every run instead of merging or asking. No
@@ -141,7 +143,7 @@ def load_conventions(skill_root: Path, info: dict) -> str:
 
 def build_substitutions(info: dict, conventions_block: str) -> dict[str, str]:
     plan_stem = str(Path(info["plan_path"]).with_suffix("")).replace("\\", "/")
-    return {
+    scalar_subs = {
         "project_name": info["project_name"],
         "stack_summary": info["stack_summary"],
         "build_cmd": info["build_cmd"],
@@ -150,8 +152,12 @@ def build_substitutions(info: dict, conventions_block: str) -> dict[str, str]:
         "plan_path": info["plan_path"],
         "plan_progress_path": f"{plan_stem}.progress.json",
         "plan_html_path": f"{plan_stem}.html",
-        "conventions_block": conventions_block,
     }
+    # Render the conventions block against the scalar subs FIRST. render() is a
+    # single pass, so any placeholder living inside the conventions text (e.g.
+    # `{{lint_cmd}}` in conventions/typescript.md) would survive un-substituted if
+    # the block were only inserted via {{conventions_block}} during the main pass.
+    return {**scalar_subs, "conventions_block": render(conventions_block, scalar_subs)}
 
 
 def render(text: str, subs: dict[str, str]) -> str:
@@ -630,6 +636,7 @@ def choose_template_root_for_project_file(skill_root: Path, role: str, rel: Path
     if (
         rel in MANAGED_TOP_LEVEL_FILES
         or rel == Path(".claude/commands/commit-and-sync.md")
+        or rel == Path(".claude/commands/publish-to-source.md")
     ):
         return skill_root / "templates" / "common"
     first = rel.parts[0] if rel.parts else ""
@@ -1153,8 +1160,13 @@ def main() -> int:
                     help="Prompt for merge conflicts and template-promotion decisions.")
     ap.add_argument("--skip-plan", action="store_true",
                     help="Do not create or repair the detected implementation plan.")
+    ap.add_argument("--gitignore-agents", action="store_true",
+                    help="Add deployed agent scaffolding to the repo .gitignore. Off by default: "
+                         "agent files are tracked so they can live on a personal dev branch and be "
+                         "shared selectively via /publish-to-source. The default run also REMOVES any "
+                         "managed block a previous deploy added.")
     ap.add_argument("--no-gitignore", action="store_true",
-                    help="Do not add deployed agent scaffolding to the repo .gitignore.")
+                    help="Do not touch the repo .gitignore at all (neither add nor remove the managed block).")
     ap.add_argument("--conflict-default", choices=("p", "t", "a"), default="p",
                     help="Default merge action for non-interactive runs and prompt defaults: "
                          "p=keep project (back-compat), t=use template, a=template then append project body. "
@@ -1195,12 +1207,16 @@ def main() -> int:
     gi_snapshot: dict[Path, bool] = {}
     if not args.no_gitignore:
         repo_root = git_repo_root(target)
-        if repo_root is not None:
+        # Agent scaffolding is TRACKED by default so it can live on a personal dev
+        # branch (and be stripped from team-facing branches via /publish-to-source).
+        # Only when --gitignore-agents is passed do we build the ignore list; the
+        # default leaves gi_rels empty, which makes update_gitignore() strip any
+        # managed block a previous deploy left behind.
+        if repo_root is not None and args.gitignore_agents:
             gi_rels = gitignore_candidate_rels(skill_root, args.role)
             # plan-renderer runtime artifacts: `progress.json` and `.html` siblings
             # of the plan. The deploy doesn't write them, but the agents do at
-            # runtime, and they should be gitignored by default (regenerable; the
-            # plan itself is the source of truth).
+            # runtime (regenerable; the plan itself is the source of truth).
             plan_stem = Path(info["plan_path"]).with_suffix("")
             gi_rels = sorted(set(gi_rels + [
                 Path(f"{plan_stem}.progress.json"),

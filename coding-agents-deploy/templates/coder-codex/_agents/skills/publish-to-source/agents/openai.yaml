@@ -1,0 +1,4 @@
+interface:
+  display_name: "Publish to Source"
+  short_description: "Merge your branch into its source branch as one squashed commit, stripping the agent overlay."
+  default_prompt: "/publish-to-source"

@@ -86,7 +86,15 @@ def detect_stack(root: Path) -> dict:
         info.update(
             stack="typescript" if "typescript" in deps else "node",
             stack_summary=" / ".join(stack_bits),
-            build_cmd="npm run build" if "build" in scripts else "<add build command>",
+            # Prefer an explicit build script; otherwise fall back to the lint
+            # script as the "does it build cleanly" gate (typical for non-bundled
+            # TS projects where lint/typecheck is the build check). Only emit the
+            # placeholder when neither exists.
+            build_cmd=(
+                "npm run build" if "build" in scripts
+                else "npm run lint" if "lint" in scripts
+                else "<add build command>"
+            ),
             test_cmd="npm test" if "test" in scripts else "<add test command>",
             lint_cmd="npm run lint" if "lint" in scripts else "",
             conventions_file="conventions/typescript.md",

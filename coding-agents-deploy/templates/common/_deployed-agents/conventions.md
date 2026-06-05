@@ -1,6 +1,6 @@
 # Coding-agent conventions — {{project_name}}
 
-Source of truth for the **deployed coding-agent overlay** in this repository. It is deployed scaffolding (gitignored by default), kept deliberately separate from whatever root-level agent-instruction files the project or developer maintains — this overlay never reads, writes, or merges those. The deployed commands and skills point here for project conventions; nothing outside the overlay is touched.
+Source of truth for the **deployed coding-agent overlay** in this repository. It is deployed scaffolding that is tracked in git so it can live on your personal dev branch; when you share your work with the team, run `/publish-to-source`, which merges your code into the source branch while stripping this overlay so it never reaches teammates. The overlay is kept deliberately separate from whatever root-level agent-instruction files the project or developer maintains — it never reads, writes, or merges those. The deployed commands and skills point here for project conventions; nothing outside the overlay is touched.
 
 ## First-run self-configuration
 

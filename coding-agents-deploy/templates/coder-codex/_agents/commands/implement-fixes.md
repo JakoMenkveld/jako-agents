@@ -135,7 +135,7 @@ Look back at the run that just finished. Edit the overlay files IN PLACE before 
 - **Reviewer misclassified a DOC-only item as MAJOR/BLOCKER** → tighten the DOC-vs-code-severity guidance in `review-iterate.md`.
 - **A specific recurring fix, convention, or unclear step** → encode it here, in `implement-phase.md`, or in `review-iterate.md`'s checklist as appropriate.
 
-Keep `implement-fixes.md` and `implement-phase.md` in sync where they overlap (review loop, severity protocol, commit protocol). Targets are the local `.agents/` files (gitignored, persist for this project). If the source-of-truth templates outside the repo are accessible, mirror the changes there too so the next deploy carries them.
+Keep `implement-fixes.md` and `implement-phase.md` in sync where they overlap (review loop, severity protocol, commit protocol). Targets are the local `.agents/` files (tracked in git, persist for this project). If the source-of-truth templates outside the repo are accessible, mirror the changes there too so the next deploy carries them.
 
 This step is **mandatory** before reporting. If nothing is genuinely worth changing, say so explicitly in the report ("no overlay updates this run") so it's a deliberate decision, not an oversight.
 

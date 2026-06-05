@@ -1,0 +1,4 @@
+interface:
+  display_name: "Write Spec"
+  short_description: "Write a verifiable {{project_name}} spec: prose for intent, checkable assertions for behavior, small mermaid diagrams."
+  default_prompt: "/write-spec"

@@ -1,6 +1,6 @@
 ---
 name: commit-and-sync
-description: Commit working-tree changes and sync to the remote, with optional `release` semver auto-bump or `--tag` explicit tag. Use when the user wants a one-shot commit + push, or asks to release a new version.
+description: Commit working-tree changes to the current branch, merge in the latest from its source branch, and push, with optional `release` semver auto-bump or `--tag` explicit tag. Use when the user wants a one-shot commit + sync, or asks to release a new version.
 ---
 
 # Commit and Sync
