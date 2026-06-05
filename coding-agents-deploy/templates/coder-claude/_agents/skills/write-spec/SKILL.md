@@ -110,7 +110,7 @@ Match the diagram to the situation, and keep each one small and single-purpose:
 - **erDiagram** - relationships between 2-3 entities for a schema change.
 - **classDiagram** - a new data model or type with its key fields.
 - **flowchart** - control flow that branches non-trivially (a decision with a couple of outcomes).
-- **UI: screens, forms, dialogs, component layouts** (PlantUML) - a wireframe of one screen or component as a PlantUML `salt` block (`@startsalt` ... `@endsalt`). Mermaid has no UI/wireframe primitive, so every UI mockup goes in PlantUML.
+- **UI: screens, forms, dialogs, component layouts** (PlantUML) - a wireframe of one screen or component, written as a fenced code block tagged `plantuml` whose body runs from `@startsalt` to `@endsalt`. Mermaid has no UI/wireframe primitive, so every UI mockup goes in PlantUML.
 
 If a diagram needs a legend to be understood, or has more than ~7 nodes, it is doing too much: split it into smaller ones or replace it with assertions.
 

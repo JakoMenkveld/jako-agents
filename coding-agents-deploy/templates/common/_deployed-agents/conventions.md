@@ -148,7 +148,7 @@ When `review-and-fix` creates or repairs phases, lean into Mermaid diagrams to m
 - **ER diagrams** for database schema changes.
 - **State diagrams** for state machines, lifecycle transitions.
 - **Flowcharts** for control flow that branches non-trivially.
-- **UI wireframes** for screens, forms, dialogs, and component layouts - as a PlantUML `salt` block (`@startsalt` ... `@endsalt`), since Mermaid has no UI primitive. (The renderer visualizes Mermaid inline; a PlantUML block stays as readable source in the plan.)
+- **UI wireframes** for screens, forms, dialogs, and component layouts - a fenced code block tagged `plantuml` whose body runs from `@startsalt` to `@endsalt`, since Mermaid has no UI primitive. The renderer turns these into visuals, the same as Mermaid.
 
 Inline diagram blocks directly inside the phase prose (between the phase heading and `### Work`) where they clarify the design. Top-level `## Phase Flow` is the existing place for the phase dependency graph; new diagrams go in-phase.
 
