@@ -8,7 +8,7 @@ description: Deploy a complete set of Claude + Codex coding-agent files into a t
 You are deploying a coordinated Claude+Codex coding-agent setup into a target project. The skill comes with two role configurations:
 
 - **`claude-codes`** — Claude implements via the rich `.claude/commands/` set with an inner `review-iterate` Sonnet subagent; Codex hosts a single `.agents/skills/review-implementation/` for the outer review.
-- **`codex-codes`** — Codex implements via the rich `.agents/commands/` + skill manifests with an inner `review-iterate` agent running on `gpt-5.5`; Claude hosts a single `.claude/commands/review-implementation.md` for the outer review.
+- **`codex-codes`** — Codex implements via the rich `.agents/commands/` + skill manifests with an inner `review-iterate` agent (no pinned model, Medium reasoning effort); Claude hosts a single `.claude/commands/review-implementation.md` for the outer review.
 - **`both`** — deploys both lanes so the project can switch coders ad-hoc.
 
 **Every role also deploys `review-and-fix`** to BOTH lanes (Claude and Codex both get it, regardless of role). It creates new implementation plans, or audits existing ones — auto-fixing structural gaps and reviewing the plan's content (unfilled placeholders, vague or non-verifiable items, internal inconsistencies) as advisory findings — so they comply with what the implementer and reviewer expect.
