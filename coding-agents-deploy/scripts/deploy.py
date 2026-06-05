@@ -272,6 +272,11 @@ def iter_template_files(root: Path):
     """Yield (relative_path_in_target, absolute_path_in_template) for every file under root."""
     for p in sorted(root.rglob("*")):
         if p.is_file():
+            # Skip Python bytecode caches. They are non-UTF-8 and would crash the
+            # text read below; a stray `__pycache__` (e.g. from running the bundled
+            # plan-renderer/bake.py in the template tree) must never break a deploy.
+            if "__pycache__" in p.parts or p.suffix == ".pyc":
+                continue
             rel = translate_path(p.relative_to(root))
             if is_settings_file(rel):
                 # Settings/config is the user's, never the deploy's. Excluding it
