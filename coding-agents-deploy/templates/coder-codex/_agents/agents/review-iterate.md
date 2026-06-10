@@ -12,6 +12,8 @@ Run this agent at Medium reasoning effort (`medium`).
 
 **Plan structure compliance is not your concern.** Whether the plan follows its canonical section layout (Phase Flow, Recommended Execution Order, Test Plan, Files-to-Create-or-Modify, etc.) is `/review-and-fix`'s job, not yours. Never comment on the plan's structure when it is compliant, and never affirm that the structure looks correct. Only when a canonical section the phase actually needs is genuinely missing or malformed may you note it, and then only as a `[DOC]` finding for `/review-and-fix` to repair. Spend every finding on content: whether the code is correct and whether the plan's substance matches what was built.
 
+**Planless findings-review mode.** If the caller explicitly says no active implementation plan exists and gives a free-standing findings list, skip every instruction to read or validate `{{plan_path}}`. In that mode, use the caller's findings, the code, tests, and project conventions as the review scope; do not report `[DOC]` findings for the missing or archived plan.
+
 ## Project context
 
 {{conventions_block}}
@@ -35,7 +37,7 @@ Plan: `{{plan_path}}`
 
 1. **Fetch-first**: `git fetch origin && git status`. Don't audit stale state.
 2. **Survey what changed — including untracked files.** Run `git status --short --untracked-files=all`, `git diff --check` (catches trailing whitespace and conflict markers), `git diff --stat HEAD~1..HEAD` if committed (else `git diff --stat`), and `git ls-files --others --exclude-standard`. **Untracked files are part of the review surface** — do not approve if relevant implementation files are untracked and you didn't inspect them. Note files outside the phase's plausible scope.
-3. **Read the phase from `{{plan_path}}`** in full — including narrative design sections, not just any "files list".
+3. **Read the phase from `{{plan_path}}`** in full — including narrative design sections, not just any "files list". Skip this step only in planless findings-review mode.
 4. **Read every file the phase touched, including untracked files.** Use `rg`/`rg --files`/file reads. Prefer parallel reads.
 5. **Build**: run `{{build_cmd}}`. Any new error or new warning is BLOCKER.
 6. **Test**: run `{{test_cmd}}`. Any new failure / regression below the prior baseline is BLOCKER. **Passing tests are necessary but not sufficient** — confirm the tests actually prove the phase's acceptance criterion, not just that they execute. A test whose body doesn't exercise the claimed behavior is MAJOR (the coverage is illusory).
@@ -51,7 +53,7 @@ Plan: `{{plan_path}}`
 Apply selectively but explicitly — skip an item only when irrelevant.
 
 - **Files & artifacts.** Promised files exist with the right shape. Promised-but-missing → MAJOR. Empty stubs masquerading as implementations → MAJOR.
-- **Plan compliance.** Each acceptance criterion has corresponding code. Code disagrees with plan → MAJOR (code wrong) or `[DOC]` MINOR (plan stale).
+- **Plan compliance.** Each acceptance criterion has corresponding code. Code disagrees with plan → MAJOR (code wrong) or `[DOC]` MINOR (plan stale). Skip this item in planless findings-review mode.
 - **Conventions.** Per the conventions block above. Violations are MINOR unless they break a core invariant.
 - **Hard write gates.** Every "must reference X" / "is rejected when Y" statement in the phase's design section has matching enforcement. Missing enforcement → MAJOR.
 - **Race conditions.** Shared-state insert/update paths under concurrent callers — describe the interleaving, flag MAJOR.

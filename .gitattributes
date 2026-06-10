@@ -1,0 +1,5 @@
+# These legacy command templates are stored as CRLF. Make whitespace checks
+# treat CR as the line ending instead of trailing space, without renormalizing
+# the file contents in the index.
+coding-agents-deploy/templates/coder-claude/_claude/commands/implement-fixes.md whitespace=cr-at-eol
+coding-agents-deploy/templates/coder-codex/_agents/commands/implement-fixes.md whitespace=cr-at-eol

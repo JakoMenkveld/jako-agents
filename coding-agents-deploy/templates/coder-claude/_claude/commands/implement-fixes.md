@@ -17,6 +17,8 @@ See **Live progress overlay** + **Implementer write checkpoints** in `.deployed-
 
 Which phase block to touch: if the findings list points at a specific phase (`Phase N: …`), update that phase's block; if `$ARGUMENTS` was empty and the command fell back to the first in-progress phase, update that block. Phase blocks must already exist (created by `/implement-phase`); if not, create one with `sub_state: "applying-fixes"` (carrying a real ISO-8601 `started_at` and `updated_at`, not a midnight placeholder) and bake.
 
+**No active plan (archived or never created).** When `{{plan_path}}` does not exist (for example the plan was moved to `docs/archive/` after completion) and the findings are free-standing (an external review of shipped code), switch to planless mode: explicit `$ARGUMENTS` are required; do not use the empty-arguments plan fallback; skip every later instruction to read or write `{{plan_path}}`, edit `{{plan_progress_path}}`, or bake; say so once up front; then run implement → build → review-iterate until clean → commit against the supplied findings and current code. Do not fabricate a plan or a progress file just to satisfy the gates. When spawning `review-iterate` in this mode, tell it no active plan exists and ask it to verify against the original findings and code only.
+
 ## Steps
 
 ### 0. First-run check
@@ -25,15 +27,15 @@ Before anything else, do the **First-run self-configuration** in `.deployed-agen
 
 ### 1. Parse the findings
 
-The findings are in `$ARGUMENTS`. If they reference specific files, read those first. If they reference phases in `{{plan_path}}`, read the relevant phase sections.
+The findings are in `$ARGUMENTS`. If they reference specific files, read those first. If they reference phases in `{{plan_path}}` and the plan exists, read the relevant phase sections. In planless mode, `$ARGUMENTS` must be non-empty and explicit; if empty, stop and ask the user for the free-standing findings.
 
-**If `$ARGUMENTS` is empty** (no findings given), do not stop — fall back to the plan: select the first in-progress phase in `{{plan_path}}`, read its full section, and reconcile it against disk. Each unfinished task or missing/incomplete file the phase calls out becomes a synthetic finding; skip anything already implemented. Read status bookkeeping only as a scope signal — never edit it. Explicitly given findings always take precedence over this fallback.
+**If `$ARGUMENTS` is empty** (no findings given) and `{{plan_path}}` exists, do not stop — fall back to the plan: select the first in-progress phase in `{{plan_path}}`, read its full section, and reconcile it against disk. Each unfinished task or missing/incomplete file the phase calls out becomes a synthetic finding; skip anything already implemented. Read status bookkeeping only as a scope signal — never edit it. Explicitly given findings always take precedence over this fallback.
 
 List the findings to the user so they can confirm before you proceed, noting whether each was explicitly given or auto-derived (and from which phase).
 
 ### 1.5. Open-questions gate (hard stop)
 
-Read the `## Open Questions` section of `{{plan_path}}`. If it contains any non-empty bullet (a line starting with `-` that has content), **stop immediately**. Do not write to the progress overlay, do not fetch, do not touch code. Open questions are user-owned and append-only; the implementer never edits them, but it also refuses to proceed while any are outstanding.
+Skip this gate in planless mode. Otherwise, read the `## Open Questions` section of `{{plan_path}}`. If it contains any non-empty bullet (a line starting with `-` that has content), **stop immediately**. Do not write to the progress overlay, do not fetch, do not touch code. Open questions are user-owned and append-only; the implementer never edits them, but it also refuses to proceed while any are outstanding.
 
 Surface every open question to the user verbatim, then ask them to clear `## Open Questions` before re-running the command, in one of two ways:
 
@@ -54,7 +56,7 @@ This is a plan-wide gate: any open question blocks any implementer-side work, in
 
 Work through each finding systematically. Follow project conventions (see `.deployed-agents/conventions.md`). Do NOT exceed the scope of the findings — no opportunistic refactors.
 
-**Per-finding progress gate (do this for every finding, no exceptions).** Before you start a finding, write `{{plan_progress_path}}` appending `{role: "implementer", msg: "starting <SEV> <file:line>: <one-line scope>"}` and refresh `updated_at`. Bake. When the finding is resolved on disk, write another activity entry summarising what changed (`{role: "implementer", msg: "resolved <SEV> <file:line>: <one-line outcome>"}`). Bake. If a Work or Files item the plan tracks is affected, also flip / refresh its state and `note` in the same write.
+**Per-finding progress gate (do this for every finding, no exceptions, except planless mode).** Before you start a finding, write `{{plan_progress_path}}` appending `{role: "implementer", msg: "starting <SEV> <file:line>: <one-line scope>"}` and refresh `updated_at`. Bake. When the finding is resolved on disk, write another activity entry summarising what changed (`{role: "implementer", msg: "resolved <SEV> <file:line>: <one-line outcome>"}`). Bake. If a Work or Files item the plan tracks is affected, also flip / refresh its state and `note` in the same write.
 
 A whole sweep of fixes with no new activity entries on disk means the overlay is broken – the user sees no movement. Even if a fix takes ninety seconds, log it.
 
@@ -82,15 +84,23 @@ Reach this step only once every finding is applied (step 3 gate). Iterate build 
 
 ### 5. Spawn the reviewer
 
+Skip the pre-spawn write/bake in planless mode.
+
 **Pre-spawn write (gate – do this before the Agent tool call, not after).** Edit `{{plan_progress_path}}`: set `sub_state: "inner-review"`; on cycles ≥ 2 increment `cycle`; append activity `{role: "implementer", msg: "inner-review pass requested (cycle K)"}`; refresh `updated_at`. Bake. Only then spawn the agent. The user must see the cycle change in their browser before the reviewer goes silent for a few minutes.
 
 Spawn the `review-iterate` agent (`.claude/agents/review-iterate.md`). Prompt:
 
 > Independently verify whether each of the following findings is fully resolved in the code, that no regression was introduced, and that the implementation still satisfies `{{plan_path}}`: [paste the findings list from step 1 verbatim]. Do NOT assume any of them were addressed — check each against the actual code yourself. Report findings as BLOCKER / MAJOR / MINOR / NIT. Do NOT implement fixes — just report what's wrong.
 
-Hand the reviewer the original findings list to verify against — not an account of what you did. Do NOT describe or summarize the changes you made; the reviewer judges each finding against the plan and the code from scratch.
+In planless mode, use this prompt instead:
+
+> No active implementation plan exists; do not read or validate `{{plan_path}}` and do not report `[DOC]` plan findings. Independently verify whether each of the following explicit findings is fully resolved in the current code and that no regression was introduced: [paste the findings list from step 1 verbatim]. Do NOT assume any of them were addressed — check each against the actual code yourself. Report findings as BLOCKER / MAJOR / MINOR / NIT. Do NOT implement fixes — just report what's wrong.
+
+Hand the reviewer the original findings list to verify against — not an account of what you did. Do NOT describe or summarize the changes you made; the reviewer judges each finding against the plan and code from scratch, or against code only in planless mode.
 
 ### 6. Implement reviewer findings + re-spawn
+
+In planless mode, skip every `{{plan_progress_path}}` write and bake in this step, but keep the review loop semantics unchanged: fix code findings, re-spawn the reviewer, and stop after the same 10-cycle cap if it does not converge.
 
 **Post-review write (gate – do this before the first code edit in response to findings).** When the reviewer returns, edit `{{plan_progress_path}}` in a single write:
 - Set `sub_state: "applying-fixes"`.
@@ -124,6 +134,8 @@ git commit -m "Apply fixes: <short summary>"
 No `git add -A`, no `--no-verify`. Do not push.
 
 After the commit, edit `{{plan_progress_path}}`: append `{role: "implementer", msg: "committed <short-sha>"}`; refresh `updated_at`. Bake. Leave `sub_state: "ready"` – the outer reviewer (`review-implementation`) is what promotes the phase to `completed` and clears the progress block.
+
+In planless mode, skip the post-commit progress-overlay write and bake.
 
 ### 8. Update this command, implement-phase, and review-iterate (mandatory last step before reporting)
 
