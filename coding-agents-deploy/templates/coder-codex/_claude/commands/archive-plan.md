@@ -48,6 +48,17 @@ Read the whole plan. Note its `# <Title>`, summary/background paragraphs, `## Au
 - If `{{plan_progress_path}}` exists, move it alongside with the same dated stem (`<plan-stem>-<YYYYMMDD>.progress.json`). Use `git mv` when tracked. If the file is effectively empty (no `phases` entries), delete it instead of archiving.
 - Likewise the rendered HTML `{{plan_html_path}}` (if present) – move alongside as `<plan-stem>-<YYYYMMDD>.html`. It is the visual snapshot of the moment the plan was archived.
 
+### 2.5. Archive any referenced spec
+
+After moving the plan, scan the first 1 000 characters of its text for a companion spec file: a markdown link of the form `[…](spec-filename.md)` or `[…](../some/path/spec-filename.md)` that points to a file in the same docs tree. If such a file exists on disk:
+
+- Move it alongside with the same date stamp: `<spec-stem>-<YYYYMMDD>.md`. If that file already exists, append `-<HHMMSS>`.
+- Use `git mv` when the spec is tracked; otherwise a plain move.
+- Stage the spec move as part of the archive commit in step 4 (it is one commit together with the plan move).
+- In the fresh plan (step 3), update every link to the old spec path to point to its new archived location.
+
+If no spec link is found, or the linked file does not exist, skip this step silently.
+
 ### 3. Write the fresh, task-free plan
 
 Create a new `{{plan_path}}` in the canonical structure (the same layout `/review-and-fix` and `/implement-phase` expect), but with **no tasks** – every phase is an empty placeholder:
@@ -80,6 +91,12 @@ Stage exactly the rename(s) and the new plan: the moved plan + any moved `progre
 
 ```
 git add <archive/dated-file(s)> {{plan_path}}
+git commit -m "Archive implementation plan and spec (<YYYYMMDD>) and start fresh plan"
+```
+
+If no spec was archived (step 2.5 was skipped), use the shorter form:
+
+```
 git commit -m "Archive implementation plan (<YYYYMMDD>) and start fresh plan"
 ```
 
