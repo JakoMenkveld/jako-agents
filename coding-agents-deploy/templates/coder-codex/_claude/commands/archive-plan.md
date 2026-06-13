@@ -1,12 +1,12 @@
 ---
-description: Archive the completed implementation plan at {{plan_path}} into a dated file under an archive/ subdirectory and start a fresh, task-free plan that carries forward only still-relevant context (summary, Automation Contract, still-relevant Decisions, still-open Open Questions and Residual Risks). Refuses to run while the plan still has outstanding tasks and asks the user how to proceed. Reviewer lane only.
+description: Archive the completed implementation plan at {{plan_path}} and every related spec document into dated files under an archive/ subdirectory, reset {{plan_path}} to a blank skeleton, and delete {{plan_html_path}}. Refuses to run while the plan still has outstanding tasks and asks the user how to proceed. Reviewer lane only.
 ---
 
 # /archive-plan
 
-Archive the finished implementation plan at `{{plan_path}}` and replace it with a clean, **task-free** plan that keeps only the durable context. This is a reviewer-lane operation – the coder lane never archives plans.
+Archive the finished implementation plan at `{{plan_path}}`, archive every related feature/spec document with it, replace the plan with a clean, empty skeleton, and delete `{{plan_html_path}}`. This is a reviewer-lane operation – the coder lane never archives plans.
 
-The flow is: **verify nothing is outstanding → move the old plan into `archive/` with a dated name → write a fresh skeleton plan carrying forward still-relevant context → commit locally.**
+The flow is: **verify nothing is outstanding → move the old plan and every related spec into `archive/` with dated names → write a fresh empty skeleton plan → delete the rendered HTML → commit locally.**
 
 ## Hard precondition: no outstanding tasks
 
@@ -25,10 +25,10 @@ Placeholder skeleton bullets written in parentheses (e.g. `- (List work items fo
 **If anything is outstanding, STOP. Do not move, rewrite, or delete anything.** Report the outstanding items grouped by phase, then ask the user how to proceed with one bundled question (AskUserQuestion when available). Offer these options:
 
 1. **Finish first (recommended)** – cancel archiving. The user completes the work (or runs `/review-implementation` to truthfully re-mark already-finished work), then re-invokes `/archive-plan`.
-2. **Archive anyway, carry the unfinished work forward as context** – proceed with archiving, but summarize each unfinished item into a narrative **`## Carried-Forward Context`** section in the new plan. These are notes, **not** tasks: no `### Work` bullets, no checkboxes, no phases. The archived copy keeps the original unfinished tasks intact.
+2. **Archive anyway, with no carry-forward** – proceed with archiving and reset the new plan to the same blank skeleton. The archived copy keeps the original unfinished tasks intact.
 3. **Cancel** – do nothing.
 
-Do not archive over outstanding tasks without an explicit choice of option 2. Never guess.
+Do not archive over outstanding tasks without an explicit choice of option 2. Never guess. Even when option 2 is chosen, do not carry unfinished tasks or context into the fresh plan.
 
 If the plan is an untouched skeleton (only placeholder bullets, no completed or outstanding work), say so and ask whether to archive anyway – there is nothing meaningful to preserve, only a date-stamped empty skeleton.
 
@@ -38,65 +38,43 @@ If the plan is an untouched skeleton (only placeholder bullets, no completed or 
 
 `{{plan_path}}` is the plan. If no file exists there, report that there is nothing to archive and stop.
 
-Read the whole plan. Note its `# <Title>`, summary/background paragraphs, `## Automation Contract`, `## Definition of Done`, the `## Decisions` content, the still-open `## Open Questions` entries, the still-relevant `## Residual Risks`, and any durable architecture/background narrative that remains true for future work.
+Read the whole plan. Note its `# <Title>` and every related feature/spec document referenced by the plan or clearly associated with it in the same docs directory. Related spec archiving is mandatory: scan the whole plan for local Markdown links and also look in the docs directory for an obvious paired spec. Archive every related spec you find. If the plan references a local spec path that should exist but does not, stop and report the missing file instead of silently skipping it.
 
-### 2. Archive the current plan
+### 2. Archive the current plan and related specs
 
 - Archive directory: an `archive/` subdirectory beside the plan (e.g. for `docs/implementation-plan.md` → `docs/archive/`). Create it if missing.
 - Dated filename: `<plan-stem>-<YYYYMMDD>.md` (today's date). If that file already exists, append `-<HHMMSS>` so nothing is overwritten.
 - Move with `git mv` when the plan is tracked (history follows the rename); otherwise a plain move. **Copy the content byte-for-byte – never edit the archived copy**, including any unfinished tasks under option 2.
 - If `{{plan_progress_path}}` exists, move it alongside with the same dated stem (`<plan-stem>-<YYYYMMDD>.progress.json`). Use `git mv` when tracked. If the file is effectively empty (no `phases` entries), delete it instead of archiving.
-- Likewise the rendered HTML `{{plan_html_path}}` (if present) – move alongside as `<plan-stem>-<YYYYMMDD>.html`. It is the visual snapshot of the moment the plan was archived.
+- Delete the rendered HTML `{{plan_html_path}}` if present. Use `git rm` when tracked; otherwise remove the untracked file. Do not archive or recreate it during this command.
+- Move every related feature/spec document into the same archive directory as `<spec-stem>-<YYYYMMDD>.md`. If that file already exists, append `-<HHMMSS>` so nothing is overwritten. Use `git mv` when tracked. Do not edit the archived plan or spec just to repair historical links.
 
-### 2.5. Archive any referenced spec
+### 3. Write the blank skeleton plan
 
-After moving the plan, scan the first 1 000 characters of its text for a companion spec file: a markdown link of the form `[…](spec-filename.md)` or `[…](../some/path/spec-filename.md)` that points to a file in the same docs tree. If such a file exists on disk:
-
-- Move it alongside with the same date stamp: `<spec-stem>-<YYYYMMDD>.md`. If that file already exists, append `-<HHMMSS>`.
-- Use `git mv` when the spec is tracked; otherwise a plain move.
-- Stage the spec move as part of the archive commit in step 4 (it is one commit together with the plan move).
-- In the fresh plan (step 3), update every link to the old spec path to point to its new archived location.
-
-If no spec link is found, or the linked file does not exist, skip this step silently.
-
-### 3. Write the fresh, task-free plan
-
-Create a new `{{plan_path}}` in the canonical structure (the same layout `/review-and-fix` and `/implement-phase` expect), but with **no tasks** – every phase is an empty placeholder:
+Create a new `{{plan_path}}` in the canonical structure (the same layout `/review-and-fix` and `/implement-phase` expect), but keep it as an empty skeleton only:
 
 - `# <same title>` – keep the prior `# <Project Name> Implementation Plan` title.
-- **Summary paragraph** – carry forward the still-relevant summary/background, trimmed to what is still true for future work. End it with: `Archived predecessor: archive/<dated file>. Created: <YYYY-MM-DD>.`
 - `## Phase Flow` – minimal Mermaid: a single `flowchart TD` with `P0[Phase 0: Initial implementation]` and no status markers.
 - `## Recommended Execution Order` – `1. Phase 0 – Initial implementation`.
-- `## Automation Contract` – **copied verbatim** from the archived plan (build/test/CI assumptions are durable).
-- `## Definition of Done` – placeholder bullet `- (List the exit criteria for the whole plan.)`; copy forward only individual DoD lines that are durable invariants rather than old-scope exit criteria.
+- `## Automation Contract` – placeholder bullet `- (Define automation contract.)`.
+- `## Definition of Done` – placeholder bullet `- (List the exit criteria for the whole plan.)`.
 - `## Phase 0: Initial implementation` with `### Work` and `### Acceptance Criteria`, each holding only the parenthetical placeholder bullet (`- (List work items for this phase.)` / `- (List acceptance criteria for this phase.)`). No real tasks.
 - `## Files to Create or Modify by Phase` → `### Phase 0` → `- (List files this phase creates or modifies.)`. If the archived plan used the legacy heading `## Files to Create by Phase`, the fresh plan uses the new name.
 - `## Test Plan` → `### Phase 0` → `- (List tests this phase ships or unblocks.)`.
-- `## Decisions` – carry forward the still-relevant decisions, reworded or condensed as needed (it is free-form, not a fixed numbered list); drop what the archived work made moot. Place it immediately before `## Open Questions`. An empty section, or a note that there are none, is acceptable – never invent decisions the user did not make.
-- `## Open Questions` – copy forward, verbatim and renumbered from 1, only the questions that are still genuinely open. Drop ones the archived work resolved. An empty section, or a note such as `None.`, is acceptable – never invent entries.
-- `## Residual Risks` – copy forward only the risks still relevant; drop risks the archived work closed; reword any whose blast radius changed.
-- `## Carried-Forward Context` – **only** when option 2 was chosen (or there is durable architectural context worth keeping). Narrative bullets summarizing unfinished/relevant context for whoever plans the next cycle. Never tasks, checkboxes, or phases.
+- `## Decisions` → `None.`
+- `## Open Questions` → `None.`
+- `## Residual Risks` → `None.`
 
-No status markers anywhere in the new plan – it starts clean. Do not create a new `progress.json` – the fresh plan has no in-flight work.
+Do not carry forward summaries, Decisions, Open Questions, Residual Risks, architectural context, implementation history, or spec facts unless the user explicitly asks for that content in the new plan.
 
-After writing the fresh plan, run the bake command once to refresh the rendered HTML beside it:
-
-```
-python .deployed-agents/plan-renderer/bake.py --plan {{plan_path}}
-```
+No status markers anywhere in the new plan – it starts clean. Do not create a new `progress.json` and do not bake a fresh HTML file – the fresh plan has no in-flight work and `{{plan_html_path}}` must be absent after archiving.
 
 ### 4. Commit locally
 
-Stage exactly the rename(s) and the new plan: the moved plan + any moved `progress.json` / `.html` snapshot under `archive/`, plus the fresh `{{plan_path}}`. The fresh `{{plan_html_path}}` is regenerable (the agent rebakes on every plan touch); leave it untracked. Nothing else:
+Stage exactly the rename(s), deletions, and the new plan: the moved plan, every moved related spec, any moved or deleted `progress.json`, the deletion of `{{plan_html_path}}` if it was tracked, plus the fresh `{{plan_path}}`. Nothing else:
 
 ```
 git add <archive/dated-file(s)> {{plan_path}}
-git commit -m "Archive implementation plan and spec (<YYYYMMDD>) and start fresh plan"
-```
-
-If no spec was archived (step 2.5 was skipped), use the shorter form:
-
-```
 git commit -m "Archive implementation plan (<YYYYMMDD>) and start fresh plan"
 ```
 
@@ -104,13 +82,13 @@ No `git add -A`, no `--no-verify`, no co-author trailer. **Do not push** – loc
 
 ### 5. Report
 
-One short paragraph: the archived path, the new plan path, what was carried forward (Automation Contract, N still-open questions, M residual risks, and `## Carried-Forward Context` if written), and that it was committed locally and not pushed. If you stopped on the outstanding-tasks precondition instead, report the outstanding items by phase and the question you asked – and make no file changes.
+One short paragraph: the archived path(s) (plan and any specs), the blank-skeleton path, and that it was committed locally and not pushed. If you stopped on the outstanding-tasks precondition instead, report the outstanding items by phase and the question you asked – and make no file changes.
 
 ## Things you do NOT do
 
 - Do not archive while any task is outstanding unless the user explicitly chooses option 2.
 - Do not edit the archived copy – it is the historical record.
-- Do not carry tasks, checkboxes, or status markers into the new plan. The new plan has no tasks.
-- Do not invent Decisions, Open Questions, or Residual Risks; only carry forward what was already there and still applies. An empty `## Decisions` or `## Open Questions` in the fresh plan is correct when nothing carries forward.
+- Do not carry any content forward into the blank skeleton – it must be clean and template-only.
+- Do not run the bake command or create `{{plan_html_path}}` after archiving.
 - Do not push. Local commit only.
 - Do not run in the coder lane – this is a reviewer-lane skill.
